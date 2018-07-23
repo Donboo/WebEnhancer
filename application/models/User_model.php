@@ -56,5 +56,9 @@ class User_model extends CI_model {
     public function insert_login($userID, $IP) {
         $this->db->query("INSERT INTO `" . $this->config->config['tables']['logins'] . "` (`UserID`, `IP`, `Time`) VALUES (?, ?, ?)", array($userID, $IP, date("Y-m-d H:i:s")));
     }
+    
+    public function confirm_register($given_id) {
+        $this->db->query("UPDATE `" . $this->config->config['tables']['registrations'] . "` SET `Confirmed` = 1 WHERE `ID` = ? LIMIT 1", array($given_id));
+    }
 
 }

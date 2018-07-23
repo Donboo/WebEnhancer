@@ -23,6 +23,21 @@ class Signup extends CI_Controller {
             flash_redirect('error', 'Nu poti accesa niciuna dintre urmatoarele pagini daca esti logat: autentificare, recuperare parola, inregistrare.', base_url());
         }
     }
+    
+    public function confirmregistration() {
+        $generated_hash = $this->uri->segment(3);
+        
+        if(strlen($generated_hash) != 84) flash_redirect('error', 'Invalid hash.', base_url("signup"));
+        
+        $register_id    = get_info("ID", $this->config->config['tables']['registrations'], "HashGenerated", $generated_hash);
+        if($register_id != $generated_hash) flash_redirect('error', 'Invalid hash.', base_url("signup"));
+        
+        $register_time  = get_info("Timestamp", $this->config->config['tables']['registrations'], "ID", $register_id);
+        if(time() - $register_time >= 1800) flash_redirect('error', 'Hash expired.', base_url("signup"));
+    
+        $this->User_model->confirm_register($given_id);
+        flash_redirect('success', 'Congratulations! You can use your account now.', base_url('login'));
+    }
  
     public function index()
     {
@@ -60,9 +75,9 @@ class Signup extends CI_Controller {
 
                             $salt               = bin2hex(openssl_random_pseudo_bytes(10));
                             $encoded_password   = hash("sha256",  "mOGhbVyt!4JkL" . implode($salt, str_split($password, floor(strlen($password)/2))) . $salt);
-                            $generatedhash      = bin2hex(openssl_random_pseudo_bytes(10) . md5($encoded_password . $salt));
+                            $generated_hash     = bin2hex(openssl_random_pseudo_bytes(10) . md5($encoded_password . $salt));
 
-                            if($this->User_model->insert_user($email, $encoded_password, $salt, $this->input->ip_address(), $generatedhash)) {
+                            if($this->User_model->insert_user($email, $encoded_password, $salt, $this->input->ip_address(), $generated_hash)) {
 
                                 $this->load->library('email');
 
@@ -85,7 +100,7 @@ class Signup extends CI_Controller {
                                 $this->email->subject('\xF0\x9F\x94\xA5 Confirm your registration to WebEnhancer');
 
 
-                                $message_to_show = ($this->session->userdata('language') == "english") ? 'Hello!<br>Your email address <b>' . $email . '</b> was used to register an account to <a href="' . base_url() . '">WebEnhancer - Free website enhancer</a>.<br><br>In order to confirm your registration, please follow the next link: <a href="' . base_url("signup/confirmregistration/" . $generatedhash) . '">' . base_url("signup/confirmregistration/" . $generatedhash) . '</a>.<b>BE AWARE! This link is valid for only 30 minutes.</b><br><br>If you haven\'t requested this registration, please ignore this email.<br><br><br>Best regards,<br>WebEnhancer team.' : 'Salut!<br>Adresa ta de email: <b>' . $email . '</b> a fost folosită la înregistrarea unui cont pe <a href="' . base_url() . '">WebEnhancer - Steroid pentru site-uri</a>.<br><br>Ca să confirmi înregistrarea, te rugăm să urmezi următorul link: <a href="' . base_url("signup/confirmregistration/" . $generatedhash) . '">' . base_url("signup/confirmregistration/" . $generatedhash) . '</a>.<b>AI GRIJĂ! Acest link este valabil doar pentru 30 de minute.</b><br><br>Dacă nu tu ai cerut această înregistrare, te rugăm să ignori email-ul.<br><br><br>Cu respect,<br>echipa WebEnhancer.';
+                                $message_to_show = ($this->session->userdata('language') == "english") ? 'Hello!<br>Your email address <b>' . $email . '</b> was used to register an account to <a href="' . base_url() . '">WebEnhancer - Free website enhancer</a>.<br><br>In order to confirm your registration, please follow the next link: <a href="' . base_url("signup/confirmregistration/" . $generated_hash) . '">' . base_url("signup/confirmregistration/" . $generated_hash) . '</a>.<b>BE AWARE! This link is valid for only 30 minutes.</b><br><br>If you haven\'t requested this registration, please ignore this email.<br><br><br>Best regards,<br>WebEnhancer team.' : 'Salut!<br>Adresa ta de email: <b>' . $email . '</b> a fost folosită la înregistrarea unui cont pe <a href="' . base_url() . '">WebEnhancer - Steroid pentru site-uri</a>.<br><br>Ca să confirmi înregistrarea, te rugăm să urmezi următorul link: <a href="' . base_url("signup/confirmregistration/" . $generated_hash) . '">' . base_url("signup/confirmregistration/" . $generated_hash) . '</a>.<b>AI GRIJĂ! Acest link este valabil doar pentru 30 de minute.</b><br><br>Dacă nu tu ai cerut această înregistrare, te rugăm să ignori email-ul.<br><br><br>Cu respect,<br>echipa WebEnhancer.';
                                 $this->email->message($message_to_show);
 
                                 $this->email->send();

@@ -57,21 +57,24 @@ class Login extends CI_Controller {
 
                         $result = $this->User_model->return_user($email, $password);
 
-                        if($result)
-                        {
-                            $sess_array = array(
-                                "ID"        => $result->ID,
-                                "EMail"     => $result->EMail,
-                                "Role"      => $result->Role,
-                                "PhotoName" => $result->PhotoName
-                            );
-                            $this->session->set_userdata("logged_in", $sess_array);
+                        if(get_info("Completed", $this->config->config['tables']['registrations'], "UserID", $result->ID)) {
+                        
+                            if($result)
+                            {
+                                $sess_array = array(
+                                    "ID"        => $result->ID,
+                                    "EMail"     => $result->EMail,
+                                    "Role"      => $result->Role,
+                                    "PhotoName" => $result->PhotoName
+                                );
+                                $this->session->set_userdata("logged_in", $sess_array);
 
-                            $this->User_model->insert_login($this->session->userdata("logged_in")["ID"], $this->input->ip_address());
+                                $this->User_model->insert_login($this->session->userdata("logged_in")["ID"], $this->input->ip_address());
 
-                            redirect(base_url("dashboard"));
-                        }
-                        else flash_redirect('error', 'Datele introduse sunt invalide.', base_url("login"));
+                                redirect(base_url("dashboard"));
+                            }
+                            else flash_redirect('error', 'Datele introduse sunt invalide.', base_url("login"));
+                        } else flash_redirect('error', 'Nu ai completat inregistrarea. Nu te poti loga inca.', base_url("login"));
                     } else flash_redirect('error', 'Datele introduse sunt invalide.', base_url("login"));
                 } else flash_redirect('error', 'recaptcha invalid.', base_url("login"));
             } else flash_redirect('error', 'recaptcha invalid.', base_url("login"));
