@@ -515,5 +515,9 @@ $config['tables'] = array(
     'results'       => 'results',
     'accounts'      => 'accounts',
     'logins'        => 'logins',
-    'projects'      => 'projects'
+    'projects'      => 'projects',
+    'registrations' => 'registrations'
 );
+
+$config['recaptcha_sitekey'] = '6LctA1cUAAAAAEt6Q--_aC4sidzRtEp-y6cLrT3D';
+$config['recaptcha_secret']  = '6LctA1cUAAAAAHoUV8ZJnyNwGYB59h1SVaHaJGJS';

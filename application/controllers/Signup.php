@@ -14,7 +14,8 @@ class Signup extends CI_Controller {
     public function __construct()
     {
         parent::__construct();
-        $this->load->model('Login_model'); 
+        $this->load->model('User_model'); 
+        $this->load->model('User_model'); 
         $this->load->helper(array('url'));
         $this->load->library('user_agent');
         
@@ -46,27 +47,55 @@ class Signup extends CI_Controller {
             
             if(strlen($email) && strlen($password)) {
                 if(!exists($email, $this->config->config['tables']['accounts'], "EMail")) {
-                    $salt               = bin2hex(openssl_random_pseudo_bytes(10));
-                    $encoded_password   = hash("sha256",  "mOGhbVyt!4JkL" . implode($salt, str_split($password, floor(strlen($password)/2))) . $salt);
                     
-                    if($this->Login_model->insert_user($email, $encoded_password, $salt, $this->input->ip_address())) {
-                        $this->load->library('email');
+                    if($this->input->post('g-recaptcha-response') !== null) {
+                        $response = $_POST['g-recaptcha-response'];     
+                        $remoteIp = $this->input->ip_address();
 
-                        $this->email->from('mailer@webenhancer.com', 'WebEnhancer');
-                        $this->email->to($email);
 
-                        $this->email->subject('\xF0\x9F\x94\xA5 Confirm your registration to WebEnhancer');
-                        $this->email->message('Hello!<br>Your email address <b>' . $email . '</b> was used to register an account to <a href="' . base_url() . '">WebEnhancer - Free website enhancer</a>.<br><br>In order to confirm your registration, please follow the next link: /LINK/.<br><br>If you haven\'t requested this registration, please ignore this email.<br><br><br>With pleasure,<br>WebEnhancer team.');
+                        $reCaptchaValidationUrl = file_get_contents("https://www.google.com/recaptcha/api/siteverify?secret=".$this->config->item('recaptcha_secret')."&response=$response&remoteip=$remoteIp");
+                        $result = json_decode($reCaptchaValidationUrl, TRUE);
 
-                        $this->email->send();
-                        flash_redirect('success', 'Your account has been registered', base_url("login"));
-                    } else flash_redirect('error', 'Something went wrong.', base_url("signup"));
-                } else {
-                    flash_redirect('error', 'The account you\'re trying to register is already registered. Pick another email address', base_url("signup"));
-                }
-            } else {
-                flash_redirect('error', 'Datele introduse sunt invalide.', base_url("signup"));
-            }
+                        if($result['success'] == 1) {
+
+                            $salt               = bin2hex(openssl_random_pseudo_bytes(10));
+                            $encoded_password   = hash("sha256",  "mOGhbVyt!4JkL" . implode($salt, str_split($password, floor(strlen($password)/2))) . $salt);
+                            $generatedhash      = bin2hex(openssl_random_pseudo_bytes(10) . md5($encoded_password . $salt));
+
+                            if($this->User_model->insert_user($email, $encoded_password, $salt, $this->input->ip_address(), $generatedhash)) {
+
+                                $this->load->library('email');
+
+                                $config['protocol']     = 'smtp';
+                                $config['smtp_host']    = 'ssl://smtp.gmail.com';
+                                $config['smtp_port']    = '465';
+                                $config['smtp_timeout'] = '7';
+                                $config['smtp_user']    = '';
+                                $config['smtp_pass']    = '';
+                                $config['charset']      = 'utf-8';
+                                $config['newline']      = "\r\n";
+                                $config['mailtype']     = 'html';
+                                $config['validation']   = TRUE;  
+
+                                $this->email->initialize($config);
+
+                                $this->email->from('mailer@webenhancer.com', 'WebEnhancer');
+                                $this->email->to($email);
+
+                                $this->email->subject('\xF0\x9F\x94\xA5 Confirm your registration to WebEnhancer');
+
+
+                                $message_to_show = ($this->session->userdata('language') == "english") ? 'Hello!<br>Your email address <b>' . $email . '</b> was used to register an account to <a href="' . base_url() . '">WebEnhancer - Free website enhancer</a>.<br><br>In order to confirm your registration, please follow the next link: <a href="' . base_url("signup/confirmregistration/" . $generatedhash) . '">' . base_url("signup/confirmregistration/" . $generatedhash) . '</a>.<b>BE AWARE! This link is valid for only 30 minutes.</b><br><br>If you haven\'t requested this registration, please ignore this email.<br><br><br>Best regards,<br>WebEnhancer team.' : 'Salut!<br>Adresa ta de email: <b>' . $email . '</b> a fost folosită la înregistrarea unui cont pe <a href="' . base_url() . '">WebEnhancer - Steroid pentru site-uri</a>.<br><br>Ca să confirmi înregistrarea, te rugăm să urmezi următorul link: <a href="' . base_url("signup/confirmregistration/" . $generatedhash) . '">' . base_url("signup/confirmregistration/" . $generatedhash) . '</a>.<b>AI GRIJĂ! Acest link este valabil doar pentru 30 de minute.</b><br><br>Dacă nu tu ai cerut această înregistrare, te rugăm să ignori email-ul.<br><br><br>Cu respect,<br>echipa WebEnhancer.';
+                                $this->email->message($message_to_show);
+
+                                $this->email->send();
+                                $flash_to_show = ($this->session->userdata('language') == "english") ? "An email containing further information has been sent to your email address. Please access it and continue. Thanks! \xF0\x9F\x98\x81" : "Un mail care conține informațiile necesare inregistrării a fost trimis către adresa indicată. Te rugăm să accesezi mail-ul și să continui înregistrarea, conform pașilor indicați. Mulțumim! \xF0\x9F\x98\x81";
+                                flash_redirect('success', $text_to_show, base_url("login"));
+                            } else flash_redirect('error', 'Something went wrong.', base_url("signup"));
+                        } else flash_redirect('error', 'recaptcha invalid.', base_url("signup"));
+                    } else flash_redirect('error', 'recaptcha invalid.', base_url("signup"));
+                } else flash_redirect('error', 'The account you\'re trying to register is already registered. Pick another email address', base_url("signup"));
+            } else flash_redirect('error', 'Datele introduse sunt invalide.', base_url("signup"));
         }
     }
     

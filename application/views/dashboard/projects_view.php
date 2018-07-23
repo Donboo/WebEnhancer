@@ -37,7 +37,7 @@
                     Account
                 </p>
                 <ul class="menu-list">
-                    <li><a>Logins</a></li>
+                    <li><a href="<?php echo base_url("dashboard/logins"); ?>"><?php echo $text_logins; ?></a></li>
                     <li><a href="<?php echo base_url("dashboard/settings"); ?>"><?php echo $text_settings; ?></a></li>
                     <li><a href="<?php echo base_url("dashboard/logout"); ?>"><?php echo $text_signout; ?></a></li>
                 </ul>

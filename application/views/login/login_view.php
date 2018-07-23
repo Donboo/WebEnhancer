@@ -45,6 +45,10 @@
             <div class="has-text-centered">
                 <button type="submit" class="button is-vcentered is-info is-outlined">Login</button>
             </div>
+            <br>
+            <center>
+                <div class="g-recaptcha" data-sitekey="<?php echo $this->config->item('recaptcha_sitekey'); ?>"></div>
+            </center>
             <?php echo form_close(); ?>
             
             <div class="has-text-centered">

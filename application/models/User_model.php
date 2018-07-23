@@ -2,14 +2,14 @@
 if ( ! defined('BASEPATH')) exit('No direct script access allowed');
 
 /**
-* Login
+* User
 * 
 * 
 * @package    WebEnhancer
 * @subpackage Model
 */
 
-class Login_model extends CI_model {
+class User_model extends CI_model {
     
     function __construct()
     {
@@ -21,7 +21,7 @@ class Login_model extends CI_model {
         
     }
     
-    public function insert_user($email, $password, $salt, $ip)
+    public function insert_user($email, $password, $salt, $ip, $generatedhash)
     {   
         $this->db->query("INSERT INTO `" . $this->config->config['tables']['accounts'] . "` (`EMail`, `Password`, `Salt`, `IP`) VALUES (?, ?, ?, ?)", array(
             $email,
@@ -29,6 +29,15 @@ class Login_model extends CI_model {
             $salt,
             $ip
         ));
+        
+        $this->db->query("INSERT INTO `" . $this->config->config['tables']['registrations'] . "` (`EMail`, `GeneratedHash`, `Timestamp`, `IP`, `UserID`) VALUES (?, ?, ?, ?)", array(
+            $email,
+            $generatedhash,
+            time(),
+            $ip,
+            $this->db->insert_id()
+        ));
+        
         return true;
     }
     

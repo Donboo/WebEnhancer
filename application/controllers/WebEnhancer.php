@@ -234,7 +234,7 @@ class WebEnhancer extends CI_Controller
         }
         
         $host = parse_url($given_url);
-        if(in_array($host['host'], array("127.0.0.1", "localhost"))) {
+        if(in_array($host['host'], array("127.0.0.1", "localhost", "192.168.0.1"))) {
             flash_redirect('error', $this->lang->line('main_invalidurl'), base_url());
         }
         
@@ -242,14 +242,14 @@ class WebEnhancer extends CI_Controller
         $response_code = $header_check[0];
         // HTTP/1.1 301 Moved Permanently
 
-        if(!in_array($response_code, array("HTTP/1.1 200 OK", "HTTP/1.1 302 Found", "HTTP/1.0 200 OK"))) {
+        if(!in_array($response_code, array("HTTP/1.1 200 OK", "HTTP/1.1 302 Found", "HTTP/1.0 200 OK", "HTTP/1.0 302 Found", "HTTP/2.0 200 OK", "HTTP/2.1 302 Found"))) {
             if(strpos($given_url, "https://") !== false) $given_url = str_replace("https://", "http://", $given_url); 
             elseif(strpos($given_url, "http://") !== false) $given_url = str_replace("http://", "https://", $given_url);
             $header_check = get_headers($given_url);
             $response_code = $header_check[0];
             // HTTP/1.1 301 Moved Permanently
 
-            if(!in_array($response_code, array("HTTP/1.1 200 OK", "HTTP/1.1 302 Found", "HTTP/1.0 200 OK"))) {
+            if(!in_array($response_code, array("HTTP/1.1 200 OK", "HTTP/1.1 302 Found", "HTTP/1.0 200 OK", "HTTP/1.0 302 Found", "HTTP/2.0 200 OK", "HTTP/2.1 302 Found"))) {
                 flash_redirect('error', $this->lang->line('main_offlineurl'), base_url());
             }
         }
@@ -378,8 +378,7 @@ class WebEnhancer extends CI_Controller
     function test_audit_sql($given_url) {
         
         // VERSIUNEA 1 - INPUTURI
-        $url_content = file_get_contents($given_url);
-        $form = substr($url_content, strpos($url_content, "<form"));    
+        $url_content = file_get_contents($given_url); 
 
         $dom = new DOMDocument;
         
@@ -387,15 +386,74 @@ class WebEnhancer extends CI_Controller
         $dom->loadHTML($url_content);
         libxml_clear_errors(true);
         
-        $inputs      = array();
-
+        $form_actions      = array();
+        $form_methods      = array();
+        
         foreach ($dom->getElementsByTagName('form') as $node)
         {
-            array_push($inputs, $node->getAttribute('method'));
+            strlen($node->getAttribute('action')) ? array_push($form_actions, $node->getAttribute('action')) : array_push($form_methods, $node->getAttribute('method') . "[urlform] $given_url [/urlform]");
         }
         
-        die(print_r($inputs));
-       // echo "<pre><form" . get_string_between($form, "<form", "</form>");
+        $form = substr($url_content, strpos($url_content, "<form"));    
+        $cont = get_string_between($form, "<form", "</form>");
+        
+        $dom = new DOMDocument;
+        
+        libxml_use_internal_errors(true);
+        $dom->loadHTML($cont);
+        libxml_clear_errors(true);
+        
+        $inputs      = array();
+        
+        foreach ($dom->getElementsByTagName('input') as $node)
+        {
+            if($node->getAttribute('name') != '_token' && $node->getAttribute('name') != 'CSRF_TOKEN') { array_push($inputs, $node->getAttribute('name'));}
+        }
+        
+        if(sizeof($inputs) > 0) {
+            if(strlen($form_actions[0])) $url = $form_actions[0];
+            else { 
+                $creator    = explode('[urlform] ', $form_methods);
+                $method     = $creator[0];
+                $url        = str_replace(" [/urlform]", "", $creator[1]);
+            }
+            $arrayinputs    = '';
+            $sql_syntaxes   = sqli_syntaxes();
+            
+            for($i = 0; $i < sizeof($inputs); $i++) { 
+                if($i == sizeof($inputs)-1) {
+                    $arrayinputs .= "'".$inputs[$i]."' => ".$sql_syntaxes['version']['normal'];
+                    break;
+                }
+                $arrayinputs .= "'".$inputs[$i]."' => ".$sql_syntaxes['version']['normal'].",";
+                
+                echo "i: $i / sizeof: " . sizeof($inputs);
+            }
+            $fields = array($arrayinputs);
+
+            // build the urlencoded data
+            $postvars = http_build_query($fields);
+
+            // open connection
+            $ch = curl_init();
+
+            // set the url, number of POST vars, POST data
+            curl_setopt($ch, CURLOPT_URL, $url);
+            curl_setopt($ch, CURLOPT_POST, count($fields));
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $postvars);
+
+            // execute post
+            $result = curl_exec($ch);
+
+            // close connection
+            curl_close($ch);
+
+            die($result);
+        }
+        else die("na mers sefane barosane");
+        
+        // VERSIUNEA 2 - URL
+        //soon
         
         //todo
         // search in string dupa inputuri-required

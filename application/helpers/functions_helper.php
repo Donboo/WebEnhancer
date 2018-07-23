@@ -156,6 +156,19 @@ function sqli_syntaxes() {
     return $syntax;
 }
 
+function xss_syntaxes() {
+    $syntax = array(
+        '"></title><script>alert(1111)</script>',
+        '<scrscriptipt>alert(1)</scrscriptipt>',
+        '<h1>a</h1>',
+        '<marquee><script>alert(/XSS/)</script></marquee>',
+        'alert(String.fromCharCode(88,83,83));))">',
+        '<img src=x onerror="&#0000106&#0000097&#0000118&#0000097&#0000115&#0000099&#0000114&#0000105&#0000112&#0000116&#0000058&#0000097&#0000108&#0000101&#0000114&#0000116&#0000040&#0000039&#0000088&#0000083&#0000083&#0000039&#0000041">',
+        '<IMG SRC=&#x6A&#x61&#x76&#x61&#x73&#x63&#x72&#x69&#x70&#x74&#x3A&#x61&#x6C&#x65&#x72&#x74&#x28&#x27&#x58&#x53&#x53&#x27&#x29>'
+    );
+    return $syntax;
+}
+
 function countable_html_tags() {
     $tags = array(
         'head',
@@ -335,4 +348,10 @@ function get_ip_location($IP) {
     $APIKEY     = "189dadc9f0e4de1b77feaf12215cf5e9";
     $info       = json_decode(get_data("http://api.ipstack.com/$IP?access_key=$APIKEY&format=1"));
     return $info->city . ", " . $info->region_name . ", " . $info->country_name;
+}
+
+/* @Faizan Noor */
+function array_push_assoc($array, $key, $value){
+    $array[$key] = $value;
+    return $array;
 }
