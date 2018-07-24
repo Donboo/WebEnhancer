@@ -404,51 +404,71 @@ class WebEnhancer extends CI_Controller
         libxml_clear_errors(true);
         
         $inputs      = array();
+        $textareas   = array();
         
         foreach ($dom->getElementsByTagName('input') as $node)
         {
-            if($node->getAttribute('name') != '_token' && $node->getAttribute('name') != 'CSRF_TOKEN') { array_push($inputs, $node->getAttribute('name'));}
+            if(!in_array($node->getAttribute('name'), array('_token', 'CSRF_TOKEN', '_csrf_header', '_csrf', 'csrf-token'))) { 
+                array_push($inputs, $node->getAttribute('name') . "[40Khsbn240801Bnak]" . $node->getAttribute('type')); 
+            }
+        }
+        foreach ($dom->getElementsByTagName('textarea') as $node)
+        {
+            array_push($textareas, $node->getAttribute('name'));
         }
         
         if(sizeof($inputs) > 0) {
-            if(strlen($form_actions[0])) $url = $form_actions[0];
+            if(isset($form_actions[0])) $url = $form_actions[0];
             else { 
-                $creator    = explode('[urlform] ', $form_methods);
+                $creator    = explode('[urlform] ', $form_methods[0]);
                 $method     = $creator[0];
                 $url        = str_replace(" [/urlform]", "", $creator[1]);
             }
-            $arrayinputs    = '';
+            $arrayinputs    = array();
             $sql_syntaxes   = sqli_syntaxes();
             
-            for($i = 0; $i < sizeof($inputs); $i++) { 
-                if($i == sizeof($inputs)-1) {
-                    $arrayinputs .= "'".$inputs[$i]."' => ".$sql_syntaxes['version']['normal'];
-                    break;
+            for($injection_count = 0; $injection_count < count($sql_syntaxes, 1); $injection_count++) {
+                for($i = 0; $i < sizeof($textareas); $i++) {
+                    $arrayinputs[$textareas[$i]] = $sql_syntaxes['version'][get_injection_type($injection_count)];
                 }
-                $arrayinputs .= "'".$inputs[$i]."' => ".$sql_syntaxes['version']['normal'].",";
-                
-                echo "i: $i / sizeof: " . sizeof($inputs);
+                for($i = 0; $i < sizeof($inputs); $i++) { 
+                    $input_exploder = explode('[40Khsbn240801Bnak]', $inputs[$i]);
+                    $input_name[$i] = $input_exploder[0];
+                    $input_type[$i] = $input_exploder[1];
+
+                    if($input_type[$i] == 'url') {
+                        $arrayinputs[$input_name[$i]] = "https://google.com/";
+                    }
+                    else if($input_type[$i] == 'email') {
+                        $arrayinputs[$input_name[$i]] = "default@yahoo.com";
+                    }
+                    else if($input_type[$i] == 'number') {
+                        $arrayinputs[$input_name[$i]] = 1;
+                    }
+                    else {
+                        $arrayinputs[$input_name[$i]] = $sql_syntaxes['version']['normal'];
+                    }
+                }
+                $dom->saveHtml();
+
+                // open connection
+                $ch = curl_init();
+
+                // set the url, number of POST vars, POST data
+                curl_setopt($ch, CURLOPT_URL, $url);
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($ch, CURLOPT_POST, count($arrayinputs));
+                curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($arrayinputs));
+                curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+                curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+
+                // execute post
+                $result = curl_exec($ch);
+                die(htmlentities($result));
+
+                // close connection
+                curl_close($ch);
             }
-            $fields = array($arrayinputs);
-
-            // build the urlencoded data
-            $postvars = http_build_query($fields);
-
-            // open connection
-            $ch = curl_init();
-
-            // set the url, number of POST vars, POST data
-            curl_setopt($ch, CURLOPT_URL, $url);
-            curl_setopt($ch, CURLOPT_POST, count($fields));
-            curl_setopt($ch, CURLOPT_POSTFIELDS, $postvars);
-
-            // execute post
-            $result = curl_exec($ch);
-
-            // close connection
-            curl_close($ch);
-
-            die($result);
         }
         else die("na mers sefane barosane");
         

@@ -169,6 +169,21 @@ function xss_syntaxes() {
     return $syntax;
 }
 
+function get_injection_type($numeric) {
+    switch ($numeric) {
+        case 1:
+            return "normal";
+        case 2:
+            return "error";
+        case 3:
+            return "double";
+        case 4:
+            return "inferential";
+        default:
+            return "normal";
+    }
+}
+
 function countable_html_tags() {
     $tags = array(
         'head',
