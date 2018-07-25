@@ -146,6 +146,22 @@
                         </div>
                     </div>
                 </div>
+                <div class="card">
+                    <div class="card-content">
+                        <div class="media">
+                            <div class="media-content">
+                                <p class="title is-4"><?php echo $text_delete_account; ?></p>
+                            </div>
+                        </div>
+
+                        <div class="content inlineblock">
+                            You can update your current email donbooo@yahoo.com
+                            <a>#css</a> <a>#responsive</a>
+                            <br>
+                            <small>Last updated: 11:09 PM - 1 Jan 2016</small>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

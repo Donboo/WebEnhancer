@@ -95,7 +95,9 @@ class WebEnhancer extends CI_Controller
     * Insert in database
     *
     */
-    function start_test() {
+    public function start_test() {
+        
+        // SHOW SOMETHING...
         
         // GETTING THE URL
         $given_url = $this->input->post('testinput');
@@ -129,7 +131,7 @@ class WebEnhancer extends CI_Controller
             ),
             "speed"=>array(
                 "minifieddesc"=>"none",
-                "loaddesc"=>"none"
+                "loaddesc"=>$this->generalData['speed']['loaddesc']
             ),
             "seo"=>array(
                 "meta"=>array(
@@ -155,7 +157,7 @@ class WebEnhancer extends CI_Controller
             ),
             "speed"=>array(
                 "minified"=>0,
-                "load"=>0
+                "load"=>$this->generalScore['speed']['load']
             ),
             "seo"=>array(
                 "meta"=>array(
@@ -171,6 +173,7 @@ class WebEnhancer extends CI_Controller
         
         $this->WebEnhancer_model->insert_result($given_url, $this->input->ip_address(), "0", $snapshot, $json_data, $json_score);
         flash_redirect('success', '', base_url("WebEnhancer/results/" . $this->db->insert_id()));
+        
     }
 
     /**
@@ -267,7 +270,10 @@ class WebEnhancer extends CI_Controller
         $this->load->library('curl'); // Phil Sturgeon
         $result             = $this->curl->simple_get(base_url("webenhancer/loadtest/".$sourceUrl)); // assuming cookie loadtest was loaded..god bless web
         $loadtest_result    = json_decode($_COOKIE["loadtest"]);
-        // todo de setat o variabila generala care sa contina jsonu asta ca sa l fac grafic pe results
+    
+        $this->generalData['speed']['loaddesc'] = $loadtest_result;
+        
+        $this->generalScore['speed']['load'] = ($loadtest_result->loadTime < 3) ? 1 : 0;
 
         $dom = new DOMDocument;
         

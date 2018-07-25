@@ -143,7 +143,7 @@
                 <p class="subtitle">
                     <?php echo form_open("WebEnhancer/start_test/"); ?>
                         <input id="testinput" name="testinput" class="input is-rounded is-primary is-inverted is-outlined" type="url" placeholder="http://yoursite.com/">
-                        <button type="submit" class="button is-rounded is-primary is-inverted is-outlined">
+                        <button type="submit" id="submittest" class="button is-rounded is-primary is-inverted is-outlined">
                             <span class="icon">
                                 <i class="fa fa-arrow-right"></i>
                             </span>
@@ -153,3 +153,11 @@
             </div>
         </div>
     </section>
+    
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+    
+    <script>
+        $("#submittest").on('click', function(e){
+            $("#mainbackground").append("<div class='loader2'><span>{</span><span>}</span><br><span class='normaltext'>Analyzing...</span></div>")
+        });
+    </script>
