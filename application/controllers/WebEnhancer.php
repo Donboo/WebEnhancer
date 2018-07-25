@@ -261,8 +261,13 @@ class WebEnhancer extends CI_Controller
         
         self::test_if_minified($given_url);
         
-        //$load_test = get_data("https://localhost/WebEnhancer/webenhancer/loadtest/$given_url");
-        //die("a bieeeeee" . $load_test);
+        $sourceUrl = parse_url($given_url);
+        $sourceUrl = $sourceUrl['host'];
+        
+        $this->load->library('curl'); // Phil Sturgeon
+        $result             = $this->curl->simple_get(base_url("webenhancer/loadtest/".$sourceUrl)); // assuming cookie loadtest was loaded..god bless web
+        $loadtest_result    = json_decode($_COOKIE["loadtest"]);
+        // todo de setat o variabila generala care sa contina jsonu asta ca sa l fac grafic pe results
 
         $dom = new DOMDocument;
         
@@ -446,7 +451,7 @@ class WebEnhancer extends CI_Controller
                         $arrayinputs[$input_name[$i]] = 1;
                     }
                     else {
-                        $arrayinputs[$input_name[$i]] = $sql_syntaxes['version']['normal'];
+                        $arrayinputs[$input_name[$i]] = $sql_syntaxes['version'][get_injection_type($injection_count)];
                     }
                 }
                 $dom->saveHtml();
@@ -536,48 +541,66 @@ class WebEnhancer extends CI_Controller
     }
     
     function test_seo_meta($given_url) {
-        $doc = new DOMDocument();
-        @$doc->loadHTML(file_get_contents($given_url));
-        $nodes          = $doc->getElementsByTagName('title');
+        
+        $dom = new DOMDocument;
+        
+        libxml_use_internal_errors(true);
+        $dom->loadHTML(file_get_contents($given_url));
+        libxml_clear_errors(true);
+        
+        
+        $title = $dom->getElementsByTagName("title");
+        if($title->length > 0) {
+            $title      = $title->item(0)->nodeValue;
+                    
+            // SETTING SCORE FOR META TITLE
+            (strlen($title) < 70) ? $this->generalScore['seo']['meta']['title'] = 1 : $this->generalScore['seo']['meta']['title'] = 0;
+            
+            
+            $this->generalData['seo']['meta']['titledesc']        = "Your title contains " . strlen($title) . " characters. This title's length should be under 70 characters.";
+        }
 
-        $title          = $nodes->item(0)->nodeValue;
-
-        $metas          = $doc->getElementsByTagName('meta');
+        $metas          = $dom->getElementsByTagName('meta');
 
         $description    = "unset";
         $keywords       = "unset";
         
-        for ($i = 0; $i < $metas->length; $i++)
-        {
-            $meta = $metas->item($i);
-            if($meta->getAttribute('name') == 'description')
-                $description = $meta->getAttribute('content');
-            if($meta->getAttribute('name') == 'keywords')
-                $keywords = $meta->getAttribute('content');
-        }
+        if($metas) {
+            for ($i = 0; $i < $metas->length; $i++)
+            {
+                $meta = $metas->item($i);
+                if($meta->getAttribute('name') == 'description')
+                    $description = $meta->getAttribute('content');
+                if($meta->getAttribute('name') == 'keywords')
+                    $keywords = $meta->getAttribute('content');
+            }
 
-        // SETTING SCORE FOR META DESCRIPTION
-        if(strlen($description) >= 50 && strlen($description) <= 300) $this->generalScore['seo']['meta']['description']     = 1;
-        else $this->generalScore['seo']['meta']['description']     = 0;
+            // SETTING SCORE FOR META DESCRIPTION
+            if(strlen($description) >= 50 && strlen($description) <= 300) $this->generalScore['seo']['meta']['description']     = 1;
+            else $this->generalScore['seo']['meta']['description']     = 0;
         
-        // SETTING SCORE FOR META TITLE
-        (strlen($title) < 70) ? $this->generalScore['seo']['meta']['title'] = 1 : $this->generalScore['seo']['meta']['title'] = 0;
-        
-        // SETTING SCORE FOR KEYWORDS
-        $keyword = explode(',', $keywords);
-        $countKeywords = 0;
-        foreach($keyword as $i =>$key) {
-            $countKeywords++;
+            // SETTING SCORE FOR KEYWORDS
+            $keyword = explode(',', $keywords);
+            $countKeywords = 0;
+            foreach($keyword as $i =>$key) {
+                $countKeywords++;
+            }
+            ($countKeywords <= 10) ? $this->generalScore['seo']['meta']['keywords'] = 1 : $this->generalScore['seo']['meta']['keywords'] = 0;
+            
+                    // SETTING DESCRIPTIONS
+            $this->generalData['seo']['meta']['descriptiondesc']  = "Your description contains " . strlen($description) . " characters. This description's length should be everywhere between 50 and 300 characters.";
+            $this->generalData['seo']['meta']['keywordsdesc']     = "You have " . strlen($countKeywords) . " keywords. Maximum number of keywords allowed is 10.";
+        } else {
+            // SETTING SCORE
+            $this->generalScore['seo']['meta']['description']     = 0;
+            $this->generalScore['seo']['meta']['keywords']        = 0;
+            // SETTING DESCRIPTIONS
+            $this->generalData['seo']['meta']['descriptiondesc']  = "Your site doesn't have a description.";
+            $this->generalData['seo']['meta']['keywordsdesc']     = "Your site doesn't have any keywords.";   
         }
-        ($countKeywords <= 10) ? $this->generalScore['seo']['meta']['keywords'] = 1 : $this->generalScore['seo']['meta']['keywords'] = 0;
-        
-        // SETTING DESCRIPTIONS
-        $this->generalData['seo']['meta']['descriptiondesc']  = "Your description contains " . strlen($description) . " characters. This description's length should be everywhere between 50 and 300 characters.";
-        $this->generalData['seo']['meta']['titledesc']        = "Your title contains " . strlen($title) . " characters. This title's length should be under 70 characters.";
-        $this->generalData['seo']['meta']['keywordsdesc']     = "You have " . strlen($countKeywords) . " keywords. Maximum number of keywords allowed is 10.";
         
         /* CHECK OPEN GRAPH todo
-        $xpath = new DOMXPath($doc);
+        $xpath = new DOMXPath($dom);
         $query = '//*(sterge paranteza)/meta[starts-with(@property, \'og:\')]';
         $metas = $xpath->query($query);
         $rmetas = array();

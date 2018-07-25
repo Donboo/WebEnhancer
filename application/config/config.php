@@ -438,10 +438,10 @@ $config['global_xss_filtering'] = TRUE;
 */
 $config['csrf_protection'] = TRUE;
 $config['csrf_token_name'] = '_token';
-$config['csrf_cookie_name'] = 'CSRF-TOKEN';
+$config['csrf_cookie_name'] = '_cookie';
 $config['csrf_expire'] = 3600;
 $config['csrf_regenerate'] = TRUE;
-$config['csrf_exclude_uris'] = array();
+$config['csrf_exclude_uris'] = array("webenhancer/loadtest");
 
 /*
 |--------------------------------------------------------------------------

@@ -2,7 +2,8 @@
 <html>
     <div class="loadcontent" id="loadcontente"><?php echo $content; ?></div>
     <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
-
+    <script src="https://cdn.jsdelivr.net/npm/js-cookie@2/src/js.cookie.min.js"></script>
+    
     <script type="text/javascript">
         function isPathAbsolute(path) {
             return /^(?:\/|[a-z]+:\/\/)/.test(path);
@@ -56,6 +57,7 @@
             $("#loadcontent").remove();
 
             $("html").append(json_string);
+            Cookies.set("loadtest", json_string);
         });
     </script>
 </html>
