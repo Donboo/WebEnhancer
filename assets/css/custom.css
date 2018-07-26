@@ -70,6 +70,32 @@
     z-index: 10;
     background-size: 99%;
 }
+#mobilecontent {
+    width: 200px;
+    height: 608px;
+    position: absolute;
+    top: 50%;
+    z-index: 10;
+    left: 50px;
+}
+#mobilecontent img {
+    width: 174px !important;
+    margin-top: 28px;
+    margin-left: 14px;
+    height: 332px;
+}
+#mobilecontent:after {
+    content: '';
+    display: block;
+    background: url('http://localhost/WebEnhancer/assets/images/em2.png') no-repeat;
+    width: 100%;
+    height: 100%;
+    left: 0px;
+    top: 0px;
+    position: absolute;
+    z-index: 10;
+    background-size: 99%;
+}
 #monitorcontent figure {
     position: absolute;
     top: 0px;
@@ -302,6 +328,6 @@ span:nth-child(2) {
     background: #7DD473;
 }
 
-.resp404, .resp500, .resp502, .resp503, .resp504 {
+.resp400, .resp404, .resp500, .resp502, .resp503, .resp504 {
     background: #D47373;
 }

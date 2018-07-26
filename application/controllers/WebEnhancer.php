@@ -29,7 +29,10 @@ class WebEnhancer extends CI_Controller
                 "ssl"=> 0
             ),
             "code"=>array(
-                "valid"=>0
+                "valid"=>0,
+                "doctype"=>0,
+                "encoding"=>0,
+                "dom"=>0
             ),
             "speed"=>array(
                 "minified"=>0,
@@ -54,7 +57,10 @@ class WebEnhancer extends CI_Controller
                 "ssldesc"=>"none"
             ),
             "code"=>array(
-                "validdesc"=>"none"
+                "validdesc"=>"none",
+                "doctype"=>"none",
+                "encoding"=>"none",
+                "domdesc"=>"none"
             ),
             "speed"=>array(
                 "minifieddesc"=>"none",
@@ -126,7 +132,10 @@ class WebEnhancer extends CI_Controller
                 "ssldesc"=>"none"
             ),
             "code"=>array(
-                "validdesc"=>"none"
+                "validdesc"=>$this->generalData['code']['validdesc'],
+                "doctype"=>$this->generalData['code']['doctype'],
+                "encoding"=>$this->generalData['code']['encoding'],
+                "domdesc"=>$this->generalData['code']['domdesc']
             ),
             "speed"=>array(
                 "minifieddesc"=>"none",
@@ -151,7 +160,10 @@ class WebEnhancer extends CI_Controller
                 "ssl"=>$this->generalScore['security']['ssl']
             ),
             "code"=>array(
-                "valid"=>0
+                "valid"=>$this->generalScore['code']['valid'],
+                "doctype"=>$this->generalScore['code']['doctype'],
+                "encoding"=>$this->generalScore['code']['encoding'],
+                "dom"=>$this->generalScore['code']['dom']
             ),
             "speed"=>array(
                 "minified"=>0,
@@ -189,11 +201,24 @@ class WebEnhancer extends CI_Controller
         
         $result_id = $this->uri->segment(3);
         
-        $data["snapshot"]                           = clear_snapshot(get_cached_info("Snapshot", "results", "ID", $result_id), get_cached_info("URL", "results", "ID", $result_id));
         $data["url"]                                = get_cached_info("URL", "results", "ID", $result_id);
+        
+        $google_data                                = file_get_contents("https://www.googleapis.com/pagespeedonline/v2/runPagespeed?url=".$data["url"]."&screenshot=true");
+        $google_data                                = json_decode($google_data, true);
+        $screenshot                                 = $google_data['screenshot']['data'];
+        
+        $google_mobile                              = file_get_contents("https://www.googleapis.com/pagespeedonline/v2/runPagespeed?url=".$data["url"]."&screenshot=true&strategy=mobile");
+        $google_mobile                              = json_decode($google_mobile, true);
+        $screenshot2                                = $google_mobile['screenshot']['data'];
+    
+        $data["snapshot"]                           = str_replace(array('_','-'),array('/','+'),$screenshot);
+        $data["snapshot_mobile"]                    = str_replace(array('_','-'),array('/','+'),$screenshot2);
+
         $data["sitename"]                           = parse_url($data["url"])['host'];
-        $data["data_result"]                        = json_decode(str_replace('"{', '{', str_replace('}"', '}', str_replace('\"','"',get_cached_info("Data", "results", "ID", $result_id)))));
+        $data["data_result"]                        = json_decode(str_replace('"{', '{', str_replace('}"', '}',str_replace('\\/\\/', '//', str_replace('\"', '"', str_replace('\\\"', '"', get_cached_info("Data", "results", "ID", $result_id)))))));
         $data["score_result"]                       = json_decode(str_replace('"{', '{', str_replace('}"', '}', str_replace('\"','"',get_cached_info("Scores", "results", "ID", $result_id)))));
+        
+        //die((str_replace('"{', '{', str_replace('}"', '}',str_replace('\\/\\/', '//', str_replace('\"', '"', str_replace('\\\"', '"', get_cached_info("Data", "results", "ID", $result_id))))))));
         
         $data["resultid"]                           = $result_id;
         
@@ -213,7 +238,9 @@ class WebEnhancer extends CI_Controller
         $data['text_titleleng']                     = $this->lang->line('main_titleleng');
         $data['text_keywordsleng']                  = $this->lang->line('main_keywordsleng');
             
-        $data['totalSEO']                           = $data["score_result"]->seo->meta->keywords + $data["score_result"]->seo->meta->title + $data["score_result"]->seo->meta->description + $data["score_result"]->seo->responsive;
+        $data['totalSEO']                           = $data["score_result"]->seo->meta->keywords + $data["score_result"]->seo->meta->title + $data["score_result"]->seo->meta->description + $data["score_result"]->seo->responsive;    
+        $data['totalSpeed']                         = 15;    
+        $data['totalCode']                          = $data["score_result"]->code->valid + $data["score_result"]->code->doctype + $data["score_result"]->code->encoding + $data["score_result"]->code->dom;    
         
         $data["main_content"] = 'webenhancer/webenhancer_view';
         $this->load->view('includes/template.php', $data);
@@ -315,10 +342,49 @@ class WebEnhancer extends CI_Controller
     }
     
     function test_code($given_url) {
-        $url_content = file_get_contents($given_url);
         
-        $url_content = html_minify($url_content);
-        self::test_code_links($url_content);
+        $url_content                            = file_get_contents($given_url);
+        
+        $get_doctype                            = preg_match_all("/(<!DOCTYPE.+\">)<html/i",$url_content,$matches);
+        $doctype                                = $matches[1][0];
+        $this->generalData['code']['doctype']   = $doctype;
+        $this->generalScore['code']['doctype']  = 25;
+        
+        $get_encoding                           = preg_match('~charset=([-a-z0-9_]+)~i',$url_content,$matches);
+        $encoding                               = $matches[1][0];
+        $this->generalData['code']['encoding']  = $encoding;
+        $this->generalScore['code']['encoding'] = 25;
+            
+        $ch = curl_init();
+
+        // set the url, number of POST vars, POST data
+        curl_setopt($ch, CURLOPT_URL, "https://validator.w3.org/nu/?out=json");
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POST, 1);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query(array("doc"=>$given_url)));
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: text/html; charset=utf-8'));
+        curl_setopt($ch, CURLOPT_USERAGENT,'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.8.1.13) Gecko/20080311 Firefox/2.0.0.13');
+
+        // execute post
+        $result = curl_exec($ch);
+        
+        $this->generalData['code']['validdesc'] = "soon";
+        $this->generalScore['code']['valid']    = 25;
+
+        // close connection
+        curl_close($ch);
+        
+        $sourceUrl          = parse_url($given_url);
+        $sourceUrl          = $sourceUrl['host'];
+        
+        $this->load->library('curl'); // Phil Sturgeon
+        $result             = $this->curl->simple_get(base_url("webenhancer/domelements/".$sourceUrl)); // assuming cookie loadtest was loaded..god bless web
+        $this->generalData['code']['domdesc']   = $_COOKIE["domelements"];
+        
+        if($_COOKIE["domelements"] < 1000)  $this->generalScore['code']['dom']      = 25;
+        else                                $this->generalScore['code']['dom']      = 0;
         
         // count tags exclude <br> <meta><link>
         
@@ -331,33 +397,6 @@ class WebEnhancer extends CI_Controller
             $output .= $tag . ": " . substr_count($url_content, "<" . $tag) . ", ";
         }
         */
-    }
-    
-    function test_code_links($url_content) {
-        $links_to_check = array();
-        $dead_links    = array(); 
-        
-        $dom = new DOMDocument;
-        
-        libxml_use_internal_errors(true);
-        $dom->loadHTML($url_content);
-        libxml_clear_errors(true);
-        
-        foreach ($dom->getElementsByTagName('a') as $node)
-        {
-            array_push($links_to_check, $node->getAttribute("href"));
-        }
-        
-        foreach($links_to_check as $link) {
-            if(filter_var($link, FILTER_VALIDATE_URL)) {
-                $header_check = @get_headers($link); // suppress skype:// until regex
-                $response_code = $header_check[0];
-                if(!in_array($response_code, array("HTTP/1.1 200 OK", "HTTP/1.1 302 Found", "HTTP/1.0 200 OK", "HTTP/1.1 301 Moved Permanently"))) {
-                    array_push($dead_links, $link);   
-                }
-            }
-        }
-        
     }
     
     // TEST SECURITY AUDIT
@@ -475,7 +514,7 @@ class WebEnhancer extends CI_Controller
 
                 // execute post
                 $result = curl_exec($ch);
-                die(htmlentities($result));
+                //die(htmlentities($result));
 
                 // close connection
                 curl_close($ch);
@@ -539,11 +578,6 @@ class WebEnhancer extends CI_Controller
     function test_seo($given_url) {
         self::test_seo_meta($given_url);
         self::test_seo_responsive($given_url);
-        self::test_seo_inline($given_url);
-    }
-    
-    function test_seo_inline($given_url) {
-        
     }
     
     function test_seo_meta($given_url) {
@@ -632,7 +666,7 @@ class WebEnhancer extends CI_Controller
             $this->generalData['seo']['responsivedesc'] = "Your site behaves different on iPhone/Windows UA.";
         }
         else {
-            $responsiveness             = strval(self::get_responsiveness($given_url));
+            $responsiveness             = "a";
             $responsiveness_telefon     = get_string_between($responsiveness, '<webenhancer_texttelefon>', '</webenhancer_texttelefon>');
             $responsiveness_tableta     = get_string_between($responsiveness, '<webenhancer_texttableta>', '</webenhancer_texttableta>');
             $responsiveness_pc          = get_string_between($responsiveness, '<webenhancer_textpc>', '</webenhancer_textpc>');
@@ -661,6 +695,13 @@ class WebEnhancer extends CI_Controller
         $data["content"]        = file_get_contents($given_url);
         $data["main_content"]   = 'webenhancer/responsivetest_view';
         return $this->load->view('includes/template.php', $data);
+    }
+    
+    function domelements() {
+        $given_url              = $this->uri->segment(3);
+        $data["content"]        = set_absolute_paths(file_get_contents("https://" . $given_url), $given_url);
+        
+        $this->load->view('webenhancer/domelements_view', $data);
     }
 
 }

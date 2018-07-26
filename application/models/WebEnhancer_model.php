@@ -23,8 +23,8 @@ class WebEnhancer_model extends CI_model {
                                       $tester, 
                                       $useragent, 
                                       $snapshot, 
-                                      $data, 
-                                      $score, 
+                                      stripslashes(stripslashes($data)), 
+                                      stripslashes(stripslashes($score)), 
                                       date("Y-m-d H:i:s")));
         
     }
