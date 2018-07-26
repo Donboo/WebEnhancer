@@ -365,8 +365,104 @@ function get_ip_location($IP) {
     return $info->city . ", " . $info->region_name . ", " . $info->country_name;
 }
 
-/* @Faizan Noor */
-function array_push_assoc($array, $key, $value){
-    $array[$key] = $value;
-    return $array;
+function format_size($number) {
+    switch ($number) {
+        case $number < 1024:
+            $size = $number .' B'; break;
+        case $number < 1048576:
+            $size = round($number / 1024, 2) .' KiB'; break;
+        case $number < 1073741824:
+            $size = round($number / 1048576, 2) . ' MiB'; break;
+        case $number < 1099511627776:
+            $size = round($number / 1073741824, 2) . ' GiB'; break;
+    }
+    return $size;
 }
+
+function getRemoteFilesize($url, $formatSize = true, $useHead = true)
+{
+    if (false !== $useHead) {
+        stream_context_set_default(array('http' => array('method' => 'HEAD')));
+    }
+    $head = array_change_key_case(get_headers($url, 1));
+    // content-length of download (in bytes), read from Content-Length: field
+    $clen = isset($head['content-length']) ? $head['content-length'] : 0;
+
+    // cannot retrieve file size, return "-1"
+    if (!$clen) {
+        return 0;
+    }
+
+    if (!$formatSize) {
+        return $clen; // return size in bytes
+    }
+
+    $size = $clen;
+    switch ($clen) {
+        case $clen < 1024:
+            $size = $clen .' B'; break;
+        case $clen < 1048576:
+            $size = round($clen / 1024, 2) .' KiB'; break;
+        case $clen < 1073741824:
+            $size = round($clen / 1048576, 2) . ' MiB'; break;
+        case $clen < 1099511627776:
+            $size = round($clen / 1073741824, 2) . ' GiB'; break;
+    }
+
+    return $size; // return formatted size
+}
+
+/* God bless Stack */
+function get_domain($url)
+{
+    $pieces = parse_url($url);
+    $domain = isset($pieces['host']) ? $pieces['host'] : $pieces['path'];
+    if (preg_match('/(?P<domain>[a-z0-9][a-z0-9\-]{1,63}\.[a-z\.]{2,6})$/i', $domain, $regs)) {
+        return $regs['domain'];
+    }
+    return false;
+}
+/**/
+
+function get_http_code($url) 
+{
+    $headers = get_headers($url);
+    return substr($headers[0], 9, 3);
+}
+
+function calculate_grade($size, $ext, $redirect_time) 
+{
+    switch($ext) {
+        case 'css':
+            if($size < 1024*100) {
+                if($redirect_time == 0) {
+                    return "OK";
+                } else return "NOT OK (REDIRECT)";
+            } else return "NOT OK (SIZE)";
+            break;
+        case 'js':
+            if($size < 1024*150) {
+                if($redirect_time == 0) {
+                    return "OK";
+                } else return "NOT OK (REDIRECT)";
+            } else return "NOT OK (SIZE)";
+            break;
+        case 'html':
+            if($size < 1024*50) {
+                if($redirect_time == 0) {
+                    return "OK";
+                } else return "NOT OK (REDIRECT)";
+            } else return "NOT OK (SIZE)";
+            break;
+        default:
+            return "?";
+            break;
+    }
+}
+
+function random_hero() {
+    $color = array("is-primary is-bold", "is-primary", "is-link is-bold", "is-link", "is-success is-bold", "is-success");
+    return $color[mt_rand(0, count($color) - 1)];
+}
+
+?>

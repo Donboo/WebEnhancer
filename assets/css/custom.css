@@ -203,6 +203,7 @@
     color:#fff;
 }
 
+/* {} LOADER */
 .loader2 {
     background-color: #4684ee;
     color: #fff;
@@ -228,11 +229,79 @@ span:nth-child(2) {
   animation-delay: 0.4s;
 }
 
-
-
 @keyframes pulse {
   to {
     transform: scale(0.8);
     opacity: 0.5;
   }
+}
+/* */
+
+/* PROGRESS RING */
+.progressbox {
+  display: inline-block;
+}
+
+.progressring_mini {
+  width: 50px;
+  height: 50px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.progressring {
+  width: 200px;
+  height: 200px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.progressring > .inner, .progressring_mini > .inner {
+  position: absolute;
+  color: #209CEE !important; 
+}
+
+.progressring > svg, .progressring_mini > svg {
+  height: 100%;
+  display: block;
+}
+/**/
+
+.table.is-network, .table.is-network th {
+    color:#bababa;
+}
+
+.table.is-network thead {
+    background-color: #353539;
+}
+
+.table.is-network tbody tr:not(.is-selected):nth-child(even) {
+    background-color: #353539;
+}
+
+.table.is-network tbody tr:not(.is-selected):nth-child(odd) {
+    background-color: #2A2A2E;
+}
+
+.table.is-network td, .table.is-network th {
+    border: 0;
+}
+
+.responsecodehttp {
+    border-radius: 5px;
+    padding: 2px;
+    font-family: Consolas, Menlo, Monaco, monospace;
+    color: #000;
+}
+
+.resp200, .resp301 {
+    background: #7DD473;
+}
+
+.resp404, .resp500, .resp502, .resp503, .resp504 {
+    background: #D47373;
 }

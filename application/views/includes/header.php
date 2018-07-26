@@ -61,4 +61,7 @@
         <?php if($this->uri->segment(1) == "login" || $this->uri->segment(1) == "signup"): ?>
         <script src='https://www.google.com/recaptcha/api.js'></script>
         <?php endif; ?>
+        <?php if($this->uri->segment(2) == "results"): ?>
+        <script src='https://cdnjs.cloudflare.com/ajax/libs/progressbar.js/1.0.1/progressbar.min.js'></script>
+        <?php endif; ?>
     </head>

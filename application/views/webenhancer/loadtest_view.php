@@ -33,6 +33,7 @@
 
                         json_string += '"' + i + '":{';
                         json_string += '"name": "' + resources[i].name + '",';
+                        json_string += '"totalTime": "' + (resources[i].responseEnd - resources[i].startTime) + '",';
                         json_string += '"redirectTime": "' + (resources[i].redirectEnd - resources[i].redirectStart) + '",';
                         json_string += '"dnsLookup": "' + (resources[i].domainLookupEnd - resources[i].domainLookupStart) + '",';
                         json_string += '"tcpTime": "' + (resources[i].connectEnd - resources[i].connectStart) + '",';

@@ -66,8 +66,7 @@ class WebEnhancer extends CI_Controller
                     "descriptiondesc"=>"none",
                     "titledesc"=>"none"
                 ),
-                "responsivedesc"=>"none",
-                "inlinedesc"=>"none"
+                "responsivedesc"=>"none"
             )
         );
 
@@ -139,8 +138,7 @@ class WebEnhancer extends CI_Controller
                     "descriptiondesc"=>$this->generalData['seo']['meta']['descriptiondesc'],
                     "titledesc"=>$this->generalData['seo']['meta']['titledesc']
                 ),
-                "responsivedesc"=>$this->generalData['seo']['meta']['responsivedesc'],
-                "inlinedesc"=>"none"
+                "responsivedesc"=>$this->generalData['seo']['responsivedesc'],
             )
         ));
         $json_data  = json_encode($data,JSON_UNESCAPED_SLASHES);
@@ -165,7 +163,7 @@ class WebEnhancer extends CI_Controller
                     "description"=>$this->generalScore['seo']['meta']['description'],
                     "title"=>$this->generalScore['seo']['meta']['title']
                 ),
-                "responsive"=>$this->generalScore['seo']['meta']['responsive'],
+                "responsive"=>$this->generalScore['seo']['responsive'],
                 "inline"=>0
             )
         ));
@@ -215,6 +213,8 @@ class WebEnhancer extends CI_Controller
         $data['text_titleleng']                     = $this->lang->line('main_titleleng');
         $data['text_keywordsleng']                  = $this->lang->line('main_keywordsleng');
             
+        $data['totalSEO']                           = $data["score_result"]->seo->meta->keywords + $data["score_result"]->seo->meta->title + $data["score_result"]->seo->meta->description + $data["score_result"]->seo->responsive;
+        
         $data["main_content"] = 'webenhancer/webenhancer_view';
         $this->load->view('includes/template.php', $data);
     }
@@ -269,7 +269,7 @@ class WebEnhancer extends CI_Controller
         
         $this->load->library('curl'); // Phil Sturgeon
         $result             = $this->curl->simple_get(base_url("webenhancer/loadtest/".$sourceUrl)); // assuming cookie loadtest was loaded..god bless web
-        $loadtest_result    = json_decode($_COOKIE["loadtest"]);
+        $loadtest_result    = $_COOKIE["loadtest"];
     
         $this->generalData['speed']['loaddesc'] = $loadtest_result;
         
@@ -560,7 +560,7 @@ class WebEnhancer extends CI_Controller
             $title      = $title->item(0)->nodeValue;
                     
             // SETTING SCORE FOR META TITLE
-            (strlen($title) < 70) ? $this->generalScore['seo']['meta']['title'] = 1 : $this->generalScore['seo']['meta']['title'] = 0;
+            (strlen($title) < 70) ? $this->generalScore['seo']['meta']['title'] = 25 : $this->generalScore['seo']['meta']['title'] = 0;
             
             
             $this->generalData['seo']['meta']['titledesc']        = "Your title contains " . strlen($title) . " characters. This title's length should be under 70 characters.";
@@ -582,7 +582,7 @@ class WebEnhancer extends CI_Controller
             }
 
             // SETTING SCORE FOR META DESCRIPTION
-            if(strlen($description) >= 50 && strlen($description) <= 300) $this->generalScore['seo']['meta']['description']     = 1;
+            if(strlen($description) >= 50 && strlen($description) <= 300) $this->generalScore['seo']['meta']['description']     = 25;
             else $this->generalScore['seo']['meta']['description']     = 0;
         
             // SETTING SCORE FOR KEYWORDS
@@ -591,7 +591,7 @@ class WebEnhancer extends CI_Controller
             foreach($keyword as $i =>$key) {
                 $countKeywords++;
             }
-            ($countKeywords <= 10) ? $this->generalScore['seo']['meta']['keywords'] = 1 : $this->generalScore['seo']['meta']['keywords'] = 0;
+            ($countKeywords <= 10) ? $this->generalScore['seo']['meta']['keywords'] = 25 : $this->generalScore['seo']['meta']['keywords'] = 25;
             
                     // SETTING DESCRIPTIONS
             $this->generalData['seo']['meta']['descriptiondesc']  = "Your description contains " . strlen($description) . " characters. This description's length should be everywhere between 50 and 300 characters.";
@@ -628,8 +628,8 @@ class WebEnhancer extends CI_Controller
 
 
         if($similariy<50) {
-            $this->generalScore['seo']['meta']['responsive'] = 1;
-            $this->generalData['seo']['meta']['responsivedesc'] = "Your site behaves different on iPhone/Windows UA.";
+            $this->generalScore['seo']['responsive'] = 1;
+            $this->generalData['seo']['responsivedesc'] = "Your site behaves different on iPhone/Windows UA.";
         }
         else {
             $responsiveness             = strval(self::get_responsiveness($given_url));
@@ -639,11 +639,11 @@ class WebEnhancer extends CI_Controller
            
             similar_text(substr($responsiveness_telefon,0,1000),substr($responsiveness_pc,0,1000), $similarity);
             if($similariy>49) {
-                $this->generalScore['seo']['meta']['responsive'] = 0;
-                $this->generalData['seo']['meta']['responsivedesc'] = "Your site doesn't behave different on iPhone'/Windows UA '/ random widths.";
+                $this->generalScore['seo']['responsive'] = 0;
+                $this->generalData['seo']['responsivedesc'] = "Your site doesn't behave different on iPhone'/Windows UA '/ random widths.";
             } else {
-                $this->generalScore['seo']['meta']['responsive'] = 1;
-                $this->generalData['seo']['meta']['responsivedesc'] = "Your site behaves different on random widths.";
+                $this->generalScore['seo']['responsive'] = 25;
+                $this->generalData['seo']['responsivedesc'] = "Your site behaves different on random widths.";
             }
         }
     }
