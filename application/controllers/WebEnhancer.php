@@ -181,7 +181,7 @@ class WebEnhancer extends CI_Controller
         ));
         $json_score  = json_encode($score,JSON_UNESCAPED_SLASHES);
         
-        $this->WebEnhancer_model->insert_result($given_url, $this->input->ip_address(), "0", $snapshot, $json_data, $json_score);
+        $this->WebEnhancer_model->insert_result($given_url, $this->input->ip_address(), "0", $snapshot, str_replace('"{', '{', str_replace('}"', '}',str_replace('\\/\\/', '//', str_replace('\"', '"', str_replace('\\\"', '"', $json_data))))), str_replace('"{', '{', str_replace('}"', '}',str_replace('\\/\\/', '//', str_replace('\"', '"', str_replace('\\\"', '"', $json_score))))));
         flash_redirect('success', '', base_url("WebEnhancer/results/" . $this->db->insert_id()));
         
     }
@@ -291,17 +291,21 @@ class WebEnhancer extends CI_Controller
         
         self::test_if_minified($given_url);
         
-        $sourceUrl = parse_url($given_url);
-        $sourceUrl = $sourceUrl['host'];
+        $sourceUrl                              = parse_url($given_url);
+        $sourceUrl                              = $sourceUrl['host'];
         
-        $this->load->library('curl'); // Phil Sturgeon
-        $result             = $this->curl->simple_get(base_url("webenhancer/loadtest/".$sourceUrl)); // assuming cookie loadtest was loaded..god bless web
-        $loadtest_result    = $_COOKIE["loadtest"];
-    
-        $this->generalData['speed']['loaddesc'] = $loadtest_result;
+        echo "<script type='text/javascript'>window.open('".base_url("webenhancer/loadtest/".$sourceUrl)."')</script>";
         
-        $this->generalScore['speed']['load'] = ($loadtest_result->loadTime < 3) ? 1 : 0;
-
+        sleep(3);
+        
+        $this->generalData['speed']['loaddesc'] = $this->session->userdata('loadtest');
+        
+        $this->generalData['code']['validdesc'] = "soon";
+        $this->generalScore['code']['valid']    = 25;
+        
+        $loadtest_result                        = $this->generalData['speed']['loaddesc'];
+        $this->generalScore['speed']['load']    = ($loadtest_result->loadTime < 3) ? 1 : 0;
+        
         $dom = new DOMDocument;
         
         libxml_use_internal_errors(true);
@@ -311,7 +315,7 @@ class WebEnhancer extends CI_Controller
         $links      = array();
         $scripts    = array();
         $errors     = array();
-
+        
         foreach ($dom->getElementsByTagName('link') as $node)
         {
             array_push($links, $node->getAttribute("href"));
@@ -345,10 +349,15 @@ class WebEnhancer extends CI_Controller
         
         $url_content                            = file_get_contents($given_url);
         
-        $get_doctype                            = preg_match_all("/(<!DOCTYPE.+\">)<html/i",$url_content,$matches);
-        $doctype                                = $matches[1][0];
-        $this->generalData['code']['doctype']   = $doctype;
-        $this->generalScore['code']['doctype']  = 25;
+        $dom = new DOMDocument;
+        
+        libxml_use_internal_errors(true);
+        $dom->loadHTML($url_content);
+        libxml_clear_errors(true);
+        
+        $this->generalData['code']['doctype']   = $dom->doctype->publicId;
+        if(get_html_version($dom->doctype->publicId) == "HTML5") $this->generalScore['code']['doctype']  = 25;
+        else $this->generalScore['code']['doctype']  = 0;
         
         $get_encoding                           = preg_match('~charset=([-a-z0-9_]+)~i',$url_content,$matches);
         $encoding                               = $matches[1][0];
@@ -379,9 +388,11 @@ class WebEnhancer extends CI_Controller
         $sourceUrl          = parse_url($given_url);
         $sourceUrl          = $sourceUrl['host'];
         
+        
+        
         $this->load->library('curl'); // Phil Sturgeon
-        $result             = $this->curl->simple_get(base_url("webenhancer/domelements/".$sourceUrl)); // assuming cookie loadtest was loaded..god bless web
-        $this->generalData['code']['domdesc']   = $_COOKIE["domelements"];
+        //$result             = $this->curl->simple_get(base_url("webenhancer/domelements/".$sourceUrl)); // assuming cookie loadtest was loaded..god bless web
+        //$this->generalData['code']['domdesc']   = $_COOKIE["domelements"];
         
         if($_COOKIE["domelements"] < 1000)  $this->generalScore['code']['dom']      = 25;
         else                                $this->generalScore['code']['dom']      = 0;
@@ -514,13 +525,12 @@ class WebEnhancer extends CI_Controller
 
                 // execute post
                 $result = curl_exec($ch);
-                //die(htmlentities($result));
 
                 // close connection
                 curl_close($ch);
             }
         }
-        else die("na mers sefane barosane");
+        
         
         // VERSIUNEA 2 - URL
         //soon
@@ -687,7 +697,6 @@ class WebEnhancer extends CI_Controller
         $data["content"]        = set_absolute_paths(file_get_contents("https://" . $given_url), $given_url);
         
         $this->load->view('webenhancer/loadtest_view', $data);
-        // if($data["content"]) return  else flash_redirect('error', '', base_url("aaa"));
     }
     
     function get_responsiveness($given_url) {
@@ -695,6 +704,11 @@ class WebEnhancer extends CI_Controller
         $data["content"]        = file_get_contents($given_url);
         $data["main_content"]   = 'webenhancer/responsivetest_view';
         return $this->load->view('includes/template.php', $data);
+    }
+    
+    function returnload() {
+        $this->session->set_userdata('loadtest', $_POST["cookieset"]);
+        return "200"; 
     }
     
     function domelements() {

@@ -430,29 +430,35 @@ function get_http_code($url)
     return substr($headers[0], 9, 3);
 }
 
-function calculate_grade($size, $ext, $redirect_time) 
+function calculate_grade($size, $ext, $redirect_time, $http_code) 
 {
     switch($ext) {
         case 'css':
-            if($size < 1024*100) {
+             if($size < 1024*100) {
                 if($redirect_time == 0) {
-                    return "OK";
-                } else return "NOT OK (REDIRECT)";
-            } else return "NOT OK (SIZE)";
+                    if($http_code == "200" || $http_code == "301") {
+                        return "OK";
+                    } else return "<abbr title='HTTP Code should be 200 or 301 for all your resources.'>NOT OK (HTTP CODE)</abbr>";
+                } else return "<abbr title='To access this resources, the connection is redirected. Remove this redirect.'>NOT OK (REDIRECT)</abbr>";
+            } else return "<abbr title='Your size excedes our recommendations.'>NOT OK (SIZE)</abbr>";
             break;
         case 'js':
-            if($size < 1024*150) {
+             if($size < 1024*150) {
                 if($redirect_time == 0) {
-                    return "OK";
-                } else return "NOT OK (REDIRECT)";
-            } else return "NOT OK (SIZE)";
+                    if($http_code == "200" || $http_code == "301") {
+                        return "OK";
+                    } else return "<abbr title='HTTP Code should be 200 or 301 for all your resources.'>NOT OK (HTTP CODE)</abbr>";
+                } else return "<abbr title='To access this resources, the connection is redirected. Remove this redirect.'>NOT OK (REDIRECT)</abbr>";
+            } else return "<abbr title='Your size excedes our recommendations.'>NOT OK (SIZE)</abbr>";
             break;
         case 'html':
             if($size < 1024*50) {
                 if($redirect_time == 0) {
-                    return "OK";
-                } else return "NOT OK (REDIRECT)";
-            } else return "NOT OK (SIZE)";
+                    if($http_code == "200" || $http_code == "301") {
+                        return "OK";
+                    } else return "<abbr title='HTTP Code should be 200 or 301 for all your resources.'>NOT OK (HTTP CODE)</abbr>";
+                } else return "<abbr title='To access this resources, the connection is redirected. Remove this redirect.'>NOT OK (REDIRECT)</abbr>";
+            } else return "<abbr title='Your size excedes our recommendations.'>NOT OK (SIZE)</abbr>";
             break;
         default:
             return "?";
@@ -463,6 +469,38 @@ function calculate_grade($size, $ext, $redirect_time)
 function random_hero() {
     $color = array("is-primary is-bold", "is-primary", "is-link is-bold", "is-link", "is-success is-bold", "is-success");
     return $color[mt_rand(0, count($color) - 1)];
+}
+
+function get_html_version($public_id) {
+    $public_id = strtoupper($public_id);
+    if(strlen($public_id) < 3) return "HTML5";
+    
+    switch($public_id) {
+        case '-//W3C//DTD HTML 4.01//EN':
+            return "HTML 4.01 Strict";
+        break;
+        case '-//W3C//DTD HTML 4.01 TRANSITIONAL//EN"':
+            return "HTML 4.01 Transitional";
+        break;
+        case '-//W3C//DTD HTML 4.01 FRAMESET//EN':
+            return "HTML 4.01 Frameset";
+        break;
+        case '-//W3C//DTD XHTML 1.0 STRICT//EN':
+            return "XHTML 1.0 Strict";
+        break;
+        case '-//W3C//DTD XHTML 1.0 TRANSITIONAL//EN':
+            return "XHTML 1.0 Transitional";
+        break;
+        case '-//W3C//DTD XHTML 1.0 FRAMESET//EN':
+            return "XHTML 1.0 Frameset";
+        break;
+        case '-//W3C//DTD XHTML 1.1//EN':
+            return "XHTML 1.1";
+        break;
+        default:
+            return "unknown";
+        break;
+    }
 }
 
 ?>

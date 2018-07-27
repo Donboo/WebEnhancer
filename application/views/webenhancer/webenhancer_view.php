@@ -195,7 +195,12 @@
                                     <?php echo getRemoteFilesize($data_result->speed->loaddesc->resources->{$load_id}->name); ?>
                                 </td>
                                 <td>
-                                    <?php echo calculate_grade(getRemoteFilesize($data_result->speed->loaddesc->resources->{$load_id}->name, false), pathinfo(parse_url($data_result->speed->loaddesc->resources->{$load_id}->name, PHP_URL_PATH), PATHINFO_EXTENSION), $data_result->speed->loaddesc->resources->{$load_id}->redirectTime); ?>
+                                    <?php echo calculate_grade(
+                                                    getRemoteFilesize($data_result->speed->loaddesc->resources->{$load_id}->name, false), 
+                                                    pathinfo(parse_url($data_result->speed->loaddesc->resources->{$load_id}->name, PHP_URL_PATH), PATHINFO_EXTENSION), 
+                                                    $data_result->speed->loaddesc->resources->{$load_id}->redirectTime, 
+                                                    get_http_code($data_result->speed->loaddesc->resources->{$load_id}->name)
+                                                );  ?>
                                 </td>
                             </tr>
                             <?php  
@@ -287,7 +292,7 @@
                                         </article>
                                         <article class="tile is-child notification is-success">
                                             <p class="title">
-                                                <?php echo $data_result->code->doctype; ?>
+                                                <?php echo get_html_version($data_result->code->doctype); ?>
                                             </p>
                                             <p class="subtitle">
                                                 DOC Type
@@ -378,7 +383,13 @@
                                     <?php echo getRemoteFilesize($data_result->speed->loaddesc->resources->{$load_id}->name); ?>
                                 </td>
                                 <td>
-                                    <?php echo calculate_grade(getRemoteFilesize($data_result->speed->loaddesc->resources->{$load_id}->name, false), pathinfo(parse_url($data_result->speed->loaddesc->resources->{$load_id}->name, PHP_URL_PATH), PATHINFO_EXTENSION), $data_result->speed->loaddesc->resources->{$load_id}->redirectTime); ?>
+                                    <?php echo calculate_grade(
+                                                                getRemoteFilesize($data_result->speed->loaddesc->resources->{$load_id}->name, false), 
+                                                                pathinfo(parse_url($data_result->speed->loaddesc->resources->{$load_id}->name, PHP_URL_PATH), PATHINFO_EXTENSION), 
+                                                                $data_result->speed->loaddesc->resources->{$load_id}->redirectTime, 
+                                                                get_http_code($data_result->speed->loaddesc->resources->{$load_id}->name)
+                                                            ); 
+                                    ?>
                                 </td>
                             </tr>
                             <?php  
@@ -412,7 +423,7 @@
 
                             <div class="tile is-parent is-vertical">
                                 <article class="tile is-child notification is-link">
-                                    <p class="title" id="totalSize">
+                                    <p class="title" >
                                         OK
                                     </p>
                                     <p class="subtitle">
