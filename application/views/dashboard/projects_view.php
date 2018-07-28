@@ -71,19 +71,21 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <?php foreach($project as $row): ?>
-                    <tr>
-                        <th>1</th>
-                        <td>
-                            <a href="<?php echo $row["URL"]; ?>" title="<?php echo  parse_url($row["URL"])['host']; ?>"><?php echo  parse_url($row["URL"])['host']; ?></a>
-                        </td>
-                        <td>38</td>
-                        <td>23</td>
-                        <td>12</td>
-                        <td>3</td>
-                        <td><a href="<?php echo base_url("dashboard/viewproject/1"); ?>"><?php echo $text_view_project; ?></a></td>
-                    </tr>
-                    <?php endforeach; ?>
+                    <?php if($project): ?>
+                        <?php foreach($project as $row): ?>
+                        <tr>
+                            <th>1</th>
+                            <td>
+                                <a href="<?php echo $row["URL"]; ?>" title="<?php echo  parse_url($row["URL"])['host']; ?>"><?php echo  parse_url($row["URL"])['host']; ?></a>
+                            </td>
+                            <td>38</td>
+                            <td>23</td>
+                            <td>12</td>
+                            <td>3</td>
+                            <td><a href="<?php echo base_url("dashboard/viewproject/1"); ?>"><?php echo $text_view_project; ?></a></td>
+                        </tr>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
                 </tbody>
             </table>
         </div>

@@ -72,7 +72,19 @@
                     </center>
                 </div>
                 <div class="column">
-                    <span class="metrics_panel metrics_zero"> <span class="mtext"><?php echo $score_result->security->ssl; ?></span></span> Security. <a href="#securitytest">Jump to results...</a>
+                   <div class="column">
+                    <center>
+                        <div class="progressbox" style="margin-top: 60px;">
+                            <div class="progressring_mini" id="securityprogress_mini">
+                                <div class="inner subtitle" style="margin-top: 20px;">
+                                    <?php echo $totalSecurity; ?>
+                                </div>
+                            </div>
+                        </div>
+                        <br> Security
+                        <br>
+                        <a href="#securitytest">Jump to results...</a>
+                    </center>
                 </div>
             </div>
         </ul>
@@ -128,7 +140,7 @@
                                                 Calculating...
                                             </p>
                                             <p class="subtitle">
-                                                Total Res. Size
+                                                <abbr title='Keep it under 2MB. Seriously.'>Total Res. Size</abbr>
                                             </p>
                                         </article>
                                         <article class="tile is-child notification is-warning">
@@ -196,11 +208,11 @@
                                 </td>
                                 <td>
                                     <?php echo calculate_grade(
-                                                    getRemoteFilesize($data_result->speed->loaddesc->resources->{$load_id}->name, false), 
-                                                    pathinfo(parse_url($data_result->speed->loaddesc->resources->{$load_id}->name, PHP_URL_PATH), PATHINFO_EXTENSION), 
-                                                    $data_result->speed->loaddesc->resources->{$load_id}->redirectTime, 
-                                                    get_http_code($data_result->speed->loaddesc->resources->{$load_id}->name)
-                                                );  ?>
+                                                getRemoteFilesize($data_result->speed->loaddesc->resources->{$load_id}->name, false), 
+                                                pathinfo(parse_url($data_result->speed->loaddesc->resources->{$load_id}->name, PHP_URL_PATH), PATHINFO_EXTENSION), 
+                                                $data_result->speed->loaddesc->resources->{$load_id}->redirectTime, 
+                                                get_http_code($data_result->speed->loaddesc->resources->{$load_id}->name)
+                                            );  ?>
                                 </td>
                             </tr>
                             <?php  
@@ -295,7 +307,7 @@
                                                 <?php echo get_html_version($data_result->code->doctype); ?>
                                             </p>
                                             <p class="subtitle">
-                                                DOC Type
+                                                <abbr title='We strongly recommend HTML5.'>DOC Type</abbr>
                                             </p>
                                         </article>
                                     </div>
@@ -312,7 +324,7 @@
                                     </div>
                                     <div class="tile is-parent is-vertical">
                                         <article class="tile is-child notification is-link">
-                                            <p class="title" id="totalSize">
+                                            <p class="title" id="totalErrors">
                                                 0
                                             </p>
                                             <p class="subtitle">
@@ -337,63 +349,27 @@
                 <table class="table is-striped is-network">
                     <thead>
                         <tr>
-                            <th>Status</th>
-                            <th>Method</th>
-                            <th>File</th>
-                            <th>Domain</th>
-                            <th>Cause</th>
                             <th>Type</th>
-                            <th>Redirect time</th>
-                            <th>DNS time</th>
-                            <th>Load time</th>
-                            <th>Size</th>
-                            <th>Our grade</th>
+                            <th>Line</th>
+                            <th>Message</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php 
-                        $load_id    = 0;
-                        $totalSize  = 0;
-                        foreach($data_result->speed->loaddesc->resources as $loaddata): 
-                        $totalSize += getRemoteFilesize($data_result->speed->loaddesc->resources->{$load_id}->name, false);
+                        $totalErrors    = 0;
+                        foreach($data_result->code->validdesc->messages as $loaddata): 
                         ?>
                             <tr>
-                                <td><span class="responsecodehttp resp<?php echo get_http_code($data_result->speed->loaddesc->resources->{$load_id}->name); ?>"><?php echo get_http_code($data_result->speed->loaddesc->resources->{$load_id}->name); ?></span></td>
-                                <td>GET</td>
                                 <td>
-                                    <?php echo ($data_result->speed->loaddesc->resources->{$load_id}->name); ?>
+                                    <span class="validatortype type<?php echo $data_result->code->validdesc->messages->{$totalErrors}->type; ?>">
+                                        <?php echo ($data_result->code->validdesc->messages->{$totalErrors}->type); ?>
+                                    </span>
                                 </td>
-                                <td>
-                                    <?php echo get_domain($data_result->speed->loaddesc->resources->{$load_id}->name); ?>
-                                </td>
-                                <td>document</td>
-                                <td>
-                                    <?php echo pathinfo(parse_url($data_result->speed->loaddesc->resources->{$load_id}->name, PHP_URL_PATH), PATHINFO_EXTENSION); ?>
-                                </td>
-                                <td>
-                                    <?php echo $data_result->speed->loaddesc->resources->{$load_id}->redirectTime; ?>
-                                </td>
-                                <td>
-                                    <?php echo $data_result->speed->loaddesc->resources->{$load_id}->dnsLookup; ?>
-                                </td>
-                                <td>
-                                    <?php echo $data_result->speed->loaddesc->resources->{$load_id}->fetchUntilResponseEnd; ?>
-                                </td>
-                                <td>
-                                    <?php echo getRemoteFilesize($data_result->speed->loaddesc->resources->{$load_id}->name); ?>
-                                </td>
-                                <td>
-                                    <?php echo calculate_grade(
-                                                                getRemoteFilesize($data_result->speed->loaddesc->resources->{$load_id}->name, false), 
-                                                                pathinfo(parse_url($data_result->speed->loaddesc->resources->{$load_id}->name, PHP_URL_PATH), PATHINFO_EXTENSION), 
-                                                                $data_result->speed->loaddesc->resources->{$load_id}->redirectTime, 
-                                                                get_http_code($data_result->speed->loaddesc->resources->{$load_id}->name)
-                                                            ); 
-                                    ?>
-                                </td>
+                                <td><?php echo ($data_result->code->validdesc->messages->{$totalErrors}->line); ?></td>
+                                <td><?php echo alive_validate_messages($data_result->code->validdesc->messages->{$totalErrors}->message); ?></td>
                             </tr>
                             <?php  
-                        $load_id++; 
+                        $totalErrors++; 
                         endforeach; 
                         ?>
                     </tbody>
@@ -461,12 +437,64 @@
 <section class="hero is-info is-fullheight" id="securitytest">
     <div class="hero-body">
         <div class="container">
-            <p class="title">
-                <?php echo $securityaudit; ?>
-            </p>
-            <p class="subtitle">
-                Info subtitle
-            </p>
+            <center>
+                <p class="title">
+                    <?php echo $securityaudit; ?>
+                </p>
+                <div class="tile is-ancestor">
+                    <div class="tile is-vertical is-12">
+                        <div class="tile">
+                            <div class="tile is-parent is-vertical">
+                                <article class="tile is-child notification is-link">
+                                    <p class="title">
+
+                                    </p>
+                                    <p class="subtitle">
+
+                                    </p>
+                                </article>
+                                <article class="tile is-child notification is-success">
+                                    <p class="title">
+
+                                    </p>
+                                    <p class="subtitle">
+
+                                    </p>
+                                </article>
+                            </div>
+                            <div class="tile is-parent">
+                                <article class="tile is-child notification is-light">
+                                    <div class="progressbox" style="margin-top: 60px;">
+                                        <div class="progressring" id="securityprogress">
+                                            <div class="inner title" style="margin-top: 20px;">
+                                                <?php echo $totalSecurity; ?>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </article>
+                            </div>
+                            <div class="tile is-parent is-vertical">
+                                <article class="tile is-child notification is-link">
+                                    <p class="title" id="totalSize">
+
+                                    </p>
+                                    <p class="subtitle">
+
+                                    </p>
+                                </article>
+                                <article class="tile is-child notification is-warning">
+                                    <p class="title">
+
+                                    </p>
+                                    <p class="subtitle">
+
+                                    </p>
+                                </article>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </center>
         </div>
     </div>
 </section>
@@ -485,7 +513,7 @@
 <section class="hero is-info is-fullheight" id="seotest">
     <div class="hero-body">
         <div class="container">
-            <center>
+             <center>
                 <p class="title">
                     <?php echo $seohelper; ?>
                 </p>
@@ -548,12 +576,16 @@
     </div>
 </section>
 
-<div id="capture" style="position:absolute;top:-99999px;">
-    <?php echo clear_snapshot($snapshot, $url); ?>
-</div>
+<section class="section">
+    <div class="container">
+        <h1 class="title">WebEnhancer guidelines</h1>
+        <div class="content">
+            <?php echo $text_guidelines; ?>
+        </div>
+    </div>
+</section>
 
 <script src="<?php echo base_url(); ?>assets/js/jquery.min.js"></script>
-<script src="<?php echo base_url(); ?>assets/js/html2canvas.min.js"></script>
 <script>
     window.onload = function onLoad() {
         var speedBar =
@@ -585,6 +617,21 @@
                 duration: 2000,
                 easing: 'easeInOut'
             });
+        
+        var securityBar =
+            new ProgressBar.Circle('#securityprogress', {
+                color: '#209CEE',
+                strokeWidth: 1,
+                duration: 2000,
+                easing: 'easeInOut'
+            });
+        var securityBar_mini =
+            new ProgressBar.Circle('#securityprogress_mini', {
+                color: '#209CEE',
+                strokeWidth: 2,
+                duration: 2000,
+                easing: 'easeInOut'
+            });
 
         var seoBar =
             new ProgressBar.Circle('#seoprogress', {
@@ -606,20 +653,13 @@
         
         codeBar.animate(<?php echo $totalCode/100; ?>);
         codeBar_mini.animate(<?php echo $totalCode/100; ?>);
+        
+        securityBar.animate(<?php echo $totalSecurity/100; ?>);
+        securityBar_mini.animate(<?php echo $totalSecurity/100; ?>);
 
         seoBar.animate(<?php echo $totalSEO/100; ?>);
         seoBar_mini.animate(<?php echo $totalSEO/100; ?>);
         $("#totalSize").text("<?php echo format_size($totalSize); ?>");
+        $("#totalErrors").text("<?php echo ($totalErrors); ?>");
     };
-
-    html2canvas(document.querySelector("#capture")).then(canvas => {
-
-        var img = new Image();
-        img.src = canvas.toDataURL("image/png");
-        img.width = 300;
-
-        $("#snapshot").html(img);
-
-        $("#capture").css("display", "none");
-    });
 </script>

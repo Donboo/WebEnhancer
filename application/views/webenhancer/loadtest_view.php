@@ -37,7 +37,6 @@
     <div class='loader2'><span>{</span><span>}</span><br><span class='normaltext'>Analyzing speed...</span></div>
     <div class="loadcontent" id="loadcontente"><?php echo $content; ?></div>
     <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/js-cookie@2/src/js.cookie.min.js"></script>
     
     <script type="text/javascript">
         function isPathAbsolute(path) {
@@ -49,14 +48,12 @@
             function get_resources() {
             // Check performance support
                 if (performance === undefined) {
-                    console.log("= Calculate Load Times: performance NOT supported");
                     return;
                 }
 
                 // Get a list of "resource" performance entries
                 var resources = performance.getEntriesByType("resource");
                 if (resources === undefined || resources.length <= 0) {
-                    console.log("= Calculate Load Times: there are NO `resource` performance records");
                     return;
                 }
 
@@ -92,14 +89,10 @@
             $(".loadcontent").remove();
             $("#loadcontent").remove();
 
-            
-            //Cookies.remove('loadtest');
-            Cookies.set('xxxxx', "" + json_string + "");
-            
             $.ajax({
                 type: "POST",
                 url: "<?= base_url('webenhancer/returnload/'); ?>",
-                data: {"_token": "<?php echo $this->security->get_csrf_hash(); ?>","cookieset":json_string},  // fix: need to append your data to the call
+                data: {"_token": "<?php echo $this->security->get_csrf_hash(); ?>","cookieset":json_string},
                 success: function (data) {
                     window.close();
                 }

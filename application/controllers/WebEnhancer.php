@@ -25,7 +25,11 @@ class WebEnhancer extends CI_Controller
             "security"=>array(
                 "xss"=>0,
                 "sqli"=>0,
-                "mis"=>0,
+                "mis"=>array(
+                    "autocomplete"=>0,
+                    "headers"=>0,
+                    "powered"=>0
+                ),
                 "ssl"=> 0
             ),
             "code"=>array(
@@ -53,7 +57,11 @@ class WebEnhancer extends CI_Controller
             "security"=>array(
                 "xssdesc"=>"none",
                 "sqlidesc"=>"none",
-                "misdesc"=>"none",
+                "misdesc"=>array(
+                    "autocompletedesc"=>"none",
+                    "headersdesc"=>"none",
+                    "powereddesc"=>"none"
+                ),
                 "ssldesc"=>"none"
             ),
             "code"=>array(
@@ -128,7 +136,11 @@ class WebEnhancer extends CI_Controller
             "security"=>array(
                 "xssdesc"=>"none",
                 "sqlidesc"=>"none",
-                "misdesc"=>"none",
+                "misdesc"=>array(
+                    "autocompletedesc"=>$this->generalData['security']['mis']['autocompletedesc'],
+                    "headersdesc"=>$this->generalData['security']['mis']['headersdesc'],
+                    "powereddesc"=>$this->generalData['security']['mis']['powereddesc']
+                ),
                 "ssldesc"=>"none"
             ),
             "code"=>array(
@@ -147,16 +159,21 @@ class WebEnhancer extends CI_Controller
                     "descriptiondesc"=>$this->generalData['seo']['meta']['descriptiondesc'],
                     "titledesc"=>$this->generalData['seo']['meta']['titledesc']
                 ),
-                "responsivedesc"=>$this->generalData['seo']['responsivedesc'],
+                "responsivedesc"=>$this->generalData['seo']['responsivedesc']
             )
         ));
         $json_data  = json_encode($data,JSON_UNESCAPED_SLASHES);
+        //die(str_replace('"{', '{', str_replace('}"', '}',str_replace('\\/\\/', '//', str_replace('\"', '"', str_replace('\\\"', '"', $json_data))))));
         
         $score = json_encode(array(
             "security"=>array(
                 "xss"=>0,
                 "sqli"=>0,
-                "mis"=>0,
+                "mis"=>array(
+                    "autocomplete"=>$this->generalScore['security']['mis']['autocomplete'],
+                    "headers"=>$this->generalScore['security']['mis']['headers'],
+                    "powered"=>$this->generalScore['security']['mis']['powered']
+                ),
                 "ssl"=>$this->generalScore['security']['ssl']
             ),
             "code"=>array(
@@ -217,9 +234,6 @@ class WebEnhancer extends CI_Controller
         $data["sitename"]                           = parse_url($data["url"])['host'];
         $data["data_result"]                        = json_decode(str_replace('"{', '{', str_replace('}"', '}',str_replace('\\/\\/', '//', str_replace('\"', '"', str_replace('\\\"', '"', get_cached_info("Data", "results", "ID", $result_id)))))));
         $data["score_result"]                       = json_decode(str_replace('"{', '{', str_replace('}"', '}', str_replace('\"','"',get_cached_info("Scores", "results", "ID", $result_id)))));
-        
-        //die((str_replace('"{', '{', str_replace('}"', '}',str_replace('\\/\\/', '//', str_replace('\"', '"', str_replace('\\\"', '"', get_cached_info("Data", "results", "ID", $result_id))))))));
-        
         $data["resultid"]                           = $result_id;
         
         // TRANSLATE
@@ -237,10 +251,12 @@ class WebEnhancer extends CI_Controller
         $data['text_descrleng']                     = $this->lang->line('main_descrleng');
         $data['text_titleleng']                     = $this->lang->line('main_titleleng');
         $data['text_keywordsleng']                  = $this->lang->line('main_keywordsleng');
+        $data['text_guidelines']                    = $this->lang->line('main_guidelines');
             
         $data['totalSEO']                           = $data["score_result"]->seo->meta->keywords + $data["score_result"]->seo->meta->title + $data["score_result"]->seo->meta->description + $data["score_result"]->seo->responsive;    
         $data['totalSpeed']                         = 15;    
-        $data['totalCode']                          = $data["score_result"]->code->valid + $data["score_result"]->code->doctype + $data["score_result"]->code->encoding + $data["score_result"]->code->dom;    
+        $data['totalCode']                          = $data["score_result"]->code->valid + $data["score_result"]->code->doctype + $data["score_result"]->code->encoding + $data["score_result"]->code->dom; 
+        $data['totalSecurity']                      = $data["score_result"]->security->xss + $data["score_result"]->security->sqli + $data["score_result"]->security->mis->headers + $data["score_result"]->security->mis->powered + $data["score_result"]->security->mis->autocomplete + $data["score_result"]->security->ssl; 
         
         $data["main_content"] = 'webenhancer/webenhancer_view';
         $this->load->view('includes/template.php', $data);
@@ -294,17 +310,9 @@ class WebEnhancer extends CI_Controller
         $sourceUrl                              = parse_url($given_url);
         $sourceUrl                              = $sourceUrl['host'];
         
-        echo "<script type='text/javascript'>window.open('".base_url("webenhancer/loadtest/".$sourceUrl)."')</script>";
-        
         sleep(3);
         
-        $this->generalData['speed']['loaddesc'] = $this->session->userdata('loadtest');
-        
-        $this->generalData['code']['validdesc'] = "soon";
-        $this->generalScore['code']['valid']    = 25;
-        
-        $loadtest_result                        = $this->generalData['speed']['loaddesc'];
-        $this->generalScore['speed']['load']    = ($loadtest_result->loadTime < 3) ? 1 : 0;
+        echo "<script type='text/javascript'>window.open('".base_url("webenhancer/loadtest/".$sourceUrl)."')</script>";
         
         $dom = new DOMDocument;
         
@@ -359,8 +367,8 @@ class WebEnhancer extends CI_Controller
         if(get_html_version($dom->doctype->publicId) == "HTML5") $this->generalScore['code']['doctype']  = 25;
         else $this->generalScore['code']['doctype']  = 0;
         
-        $get_encoding                           = preg_match('~charset=([-a-z0-9_]+)~i',$url_content,$matches);
-        $encoding                               = $matches[1][0];
+        //$get_encoding                           = preg_match('~charset=([-a-z0-9_]+)~i',$url_content,$matches);
+        $encoding                               = "UTF-8";//$matches[1][0];
         $this->generalData['code']['encoding']  = $encoding;
         $this->generalScore['code']['encoding'] = 25;
             
@@ -379,8 +387,24 @@ class WebEnhancer extends CI_Controller
         // execute post
         $result = curl_exec($ch);
         
-        $this->generalData['code']['validdesc'] = "soon";
-        $this->generalScore['code']['valid']    = 25;
+        $newjson            ='{"messages":{';
+        $result_decoded     = json_decode($result);
+        
+        $counter = 0; // another purpose.. nu setez degeaba :)
+        // mai nou sunt si chirurg de trb sa dezmembrez jsonu sa l fac cum vreau eu........
+        for($counter = 0; $counter < count((array)$result_decoded, 1); $counter++) {
+            if(isset($result_decoded->messages[$counter])) {
+                $newjson .='"'.$counter.'":{"type":"'.($result_decoded->messages[$counter]->type).'","line":"'.($result_decoded->messages[$counter]->lastLine).'","message":"'.($result_decoded->messages[$counter]->message).'"}';
+                if($counter != count((array)$result_decoded, 1)) $newjson .= ',';
+            } else {
+                $newjson = rtrim($newjson, ',');
+            }
+        }
+        
+        $newjson .= '}}';
+        
+        $this->generalData['code']['validdesc'] = $newjson;
+        $this->generalScore['code']['valid']    = ($counter>0) ? 0 : 25;
 
         // close connection
         curl_close($ch);
@@ -388,14 +412,9 @@ class WebEnhancer extends CI_Controller
         $sourceUrl          = parse_url($given_url);
         $sourceUrl          = $sourceUrl['host'];
         
+        sleep(3);
         
-        
-        $this->load->library('curl'); // Phil Sturgeon
-        //$result             = $this->curl->simple_get(base_url("webenhancer/domelements/".$sourceUrl)); // assuming cookie loadtest was loaded..god bless web
-        //$this->generalData['code']['domdesc']   = $_COOKIE["domelements"];
-        
-        if($_COOKIE["domelements"] < 1000)  $this->generalScore['code']['dom']      = 25;
-        else                                $this->generalScore['code']['dom']      = 0;
+        echo "<script type='text/javascript'>window.open('".base_url("webenhancer/domelements/".$sourceUrl)."')</script>";
         
         // count tags exclude <br> <meta><link>
         
@@ -431,8 +450,14 @@ class WebEnhancer extends CI_Controller
 
             $certificate_read   = $param["options"]["ssl"]["peer_certificate"];
             $result_given = ( !is_null( $certificate_read ) ) ? true : false;
-            if($result_given) $this->generalScore['security']['ssl'] = 1;
-        } else $this->generalScore['security']['ssl'] = 0;
+            if($result_given) { 
+                $this->generalData['security']['ssldesc'] = 'SSL on point.';
+                $this->generalScore['security']['ssl'] = 14.28;
+              }
+        } else {
+            $this->generalData['security']['ssldesc'] = 'SSL is not available.';
+            $this->generalScore['security']['ssl'] = 0;
+        }
     }
     
     // TEST SECURITY AUDIT: SQLI
@@ -455,14 +480,8 @@ class WebEnhancer extends CI_Controller
             strlen($node->getAttribute('action')) ? array_push($form_actions, $node->getAttribute('action')) : array_push($form_methods, $node->getAttribute('method') . "[urlform] $given_url [/urlform]");
         }
         
-        $form = substr($url_content, strpos($url_content, "<form"));    
+        /*$form = substr($url_content, strpos($url_content, "<form"));    
         $cont = get_string_between($form, "<form", "</form>");
-        
-        $dom = new DOMDocument;
-        
-        libxml_use_internal_errors(true);
-        $dom->loadHTML($cont);
-        libxml_clear_errors(true);
         
         $inputs      = array();
         $textareas   = array();
@@ -525,11 +544,12 @@ class WebEnhancer extends CI_Controller
 
                 // execute post
                 $result = curl_exec($ch);
+                die($result);
 
                 // close connection
                 curl_close($ch);
             }
-        }
+        }*/
         
         
         // VERSIUNEA 2 - URL
@@ -567,6 +587,12 @@ class WebEnhancer extends CI_Controller
     
     */
     function test_audit_mis($given_url) {
+        
+        /*
+        *
+        * ADMIN IN ROBOTS.TXT
+        *
+        */
         $host = parse_url($given_url);
         $host = $host['scheme'] . "://" . $host['host'] . "/robots.txt";
         
@@ -579,13 +605,150 @@ class WebEnhancer extends CI_Controller
             $keywords = array('admin', 'administrator', 'acp', 'admincp', 'administration');
             $match = (str_replace($keywords, '', $robots_content) != $robots_content);
             if($match == 1) {
-                $this->generalScore['security']['misconfiguration']['robots'] = 1;
+                $this->generalScore['security']['misconfiguration']['robots'] = 14.28;
             }
         }
         
+        // CRAWLER STARTS RIGHT HERE
+        $dom                = new DOMDocument;
+        $links_to_crawl     = array($given_url);
+        $inputs_vulnerable  = array();
+        
+        libxml_use_internal_errors(true);
+        $dom->loadHTML(file_get_contents($given_url));
+        libxml_clear_errors(true);
+        
+        foreach($dom->getElementsByTagName('a') as $node) 
+        {
+            if(filter_var($node->getAttribute("href"), FILTER_VALIDATE_URL) && check_if_alive($node->getAttribute("href")) && get_domain($node->getAttribute("href")) == get_domain($given_url)) {
+                array_push($links_to_crawl, $node->getAttribute("href"));
+            }
+        }
+
+        foreach($links_to_crawl as $another_link) {
+            /*
+            *
+            * AUTOCOMPLETE PASSWORDS
+            *
+            */
+            foreach($dom->getElementsByTagName('input') as $node) 
+            {
+                if(strlen($node->getAttribute('type')))
+                {
+                    $input_type = $node->getAttribute('type');
+                    if($input_type == 'password')
+                    {
+                        if(strlen($node->getAttribute('password')))
+                        {
+                            $auto_complete = $node->getAttribute('autocomplete');
+                            if(strcasecmp($auto_complete, 'off') != 0) {
+                                array_push($inputs_vulnerable, $node->getAttribute('name') . "[onpage]" . $another_link);
+                                $this->generalScore['security']['mis']['autocomplete'] = 0;
+                            } else {
+                                $this->generalScore['security']['mis']['autocomplete'] = 14.28;
+                            }
+                        }
+                    }
+                }
+            }
+            $this->generalData['security']['mis']['autocompletedesc'] = $inputs_vulnerable;
+
+            /*
+            *
+            * DISCLOSURE HTTP
+            *
+            */
+            $available_headers = array('Apache',
+                                       'Win32',
+                                       'mod_ssl',
+                                       'OpenSSL',
+                                       'PHP',
+                                       'mod_perl',
+                                       'Perl',
+                                       'Ubuntu',
+                                       'Python',
+                                       'mod_python',
+                                       'Microsoft',
+                                       'IIS',
+                                       'Unix',
+                                       'Linux'
+                                  );
+
+            $powered_by        = array('PHP',
+                                       'ASP',
+                                       'NET',
+                                       'JSP',
+                                       'JBoss',
+                                       'Perl',
+                                       'Python'
+                                  );
+
+            @$headers = get_headers($given_url, 1);
+            if($headers)
+            {			
+                if(isset($headers['server']))
+                {
+                    $current_header = $headers['server'];
+                    foreach($current_header as $currentHeader)
+                    {
+                        if(stripos($currentHeader, $available_headers) !== false)
+                        {
+                            $this->generalData['security']['mis']['headersdesc'] = $currentHeader;
+                            $this->generalScore['security']['mis']['headers'] = 0;
+                        } else {
+                            $this->generalData['security']['mis']['headersdesc'] = "OK";
+                            $this->generalScore['security']['mis']['headers'] = 14.28;
+                        }
+                    }
+                } else {
+                    $this->generalData['security']['mis']['headersdesc'] = "OK";
+                    $this->generalScore['security']['mis']['headers'] = 14.28;
+                }
+
+                if(isset($headers['x-powered-by']))
+                {
+                    $current_header = $headers['x-powered-by'];
+                    foreach($current_header as $currentHeader)
+                    {
+                        if(stripos($currentHeader, $current_header) !== false)
+                        {
+                            $this->generalData['security']['mis']['powereddesc'] = $currentHeader;
+                            $this->generalScore['security']['mis']['powered'] = 0;
+                        } else {
+                            $this->generalData['security']['mis']['powereddesc'] = "OK";
+                            $this->generalScore['security']['mis']['powered'] = 14.28;
+                        }
+                    }
+                } else {
+                    $this->generalData['security']['mis']['powereddesc'] = "OK";
+                    $this->generalScore['security']['mis']['powered'] = 14.28;
+                }
+            }
+        }
     }
     
     function test_seo($given_url) {
+        
+        /*
+        *
+        * Continue Load test (because of new tab)
+        *
+        */
+        $this->generalData['speed']['loaddesc'] = $this->session->userdata('loadtest');
+        
+        $loadtest_result                        = $this->generalData['speed']['loaddesc'];
+        $this->generalScore['speed']['load']    = ($loadtest_result->loadTime < 3) ? 1 : 0;
+        
+        /*
+        *
+        * Continue DOM elements test (because of new tab)
+        *
+        */
+        $this->generalData['code']['domdesc']   = $this->session->userdata('domelements');
+        
+        if($this->generalData['code']['domdesc'] < 1000)    $this->generalScore['code']['dom']      = 25;
+        else                                                $this->generalScore['code']['dom']      = 0;
+        
         self::test_seo_meta($given_url);
         self::test_seo_responsive($given_url);
     }
@@ -707,8 +870,25 @@ class WebEnhancer extends CI_Controller
     }
     
     function returnload() {
-        $this->session->set_userdata('loadtest', $_POST["cookieset"]);
-        return "200"; 
+        if(isset($_POST["cookieset"])) {
+            $this->session->set_userdata('loadtest', $_POST["cookieset"]);
+            echo "200"; // bcoz return won't.
+            return "200"; 
+        } else {
+            $this->session->set_userdata('loadtest', "501");
+            echo "501"; // bcoz return won't.
+            return "501"; 
+        }
+    }
+    
+    function returndomelements() {
+        if(isset($_POST["domelements"])) {
+            $this->session->set_userdata('domelements', $_POST["domelements"]);
+            die("200"); // bcoz return won't.
+        } else {
+            $this->session->set_userdata('domelements', "0");
+            die("501"); // bcoz return won't.
+        }
     }
     
     function domelements() {

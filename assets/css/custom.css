@@ -317,7 +317,7 @@ span:nth-child(2) {
     border: 0;
 }
 
-.responsecodehttp {
+.responsecodehttp, .validatortype {
     border-radius: 5px;
     padding: 2px;
     font-family: Consolas, Menlo, Monaco, monospace;
@@ -330,4 +330,16 @@ span:nth-child(2) {
 
 .resp400, .resp404, .resp500, .resp502, .resp503, .resp504 {
     background: #D47373;
+}
+
+.typeerror {
+    background: #D47373;
+}
+
+.typewarning {
+    background: #D4B473;
+}
+
+.typeinfo {
+    background: #73B2D4;
 }

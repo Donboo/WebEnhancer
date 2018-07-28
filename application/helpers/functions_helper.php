@@ -1,5 +1,13 @@
 <?php
 
+/**
+* 
+* Get time difference between a date and current date
+*
+* @param string $date Date to convert 
+* @return string
+*
+*/
 function get_time_difference($date) 
  {
     if(empty($date)) {
@@ -31,6 +39,15 @@ function get_time_difference($date)
 
     return (($now > $unix_date) ? ("$difference $periods[$j] {$tense}") : ("{$tense} $difference $periods[$j]"));
 }
+
+/**
+* 
+* Get time difference between a timestamp and current date
+*
+* @param integer $date Timestamp to difference 
+* @return string
+*
+*/
 function get_time_difference_timestamp($date) 
  {
     if(empty($date)) {
@@ -184,42 +201,6 @@ function get_injection_type($numeric) {
     }
 }
 
-function countable_html_tags() {
-    $tags = array(
-        'head',
-        'body',
-        'header',
-        'footer',
-        'nav',
-        'title',
-        'h1',
-        'h2',
-        'h3',
-        'h4',
-        'h5',
-        'p',
-        'span',
-        'abbr',
-        'code',
-        'pre',
-        'address',
-        'button',
-        'a',
-        'div',
-        'form',
-        'input',
-        'noscript',
-        'option',
-        'table',
-        'thead',
-        'tbody',
-        'tr',
-        'td',
-        'style'
-    );
-    return $tags;
-}
-
 function html_minify($string) {
     return preg_replace('!\s+!', ' ', $string);
 }
@@ -303,6 +284,15 @@ function set_absolute_paths($content, $url) {
     return $content;
 }
 
+/**
+* 
+* Clear snapshot - No longer used - Here for historical reasons :'(
+*
+* @param string  $content            Content to clear
+* @param string  $url                URL (needed for rel2abs)
+* @return string
+*
+*/
 function clear_snapshot($content, $url) {
     $styles = array();
     $scripts = array();
@@ -353,18 +343,45 @@ function clear_snapshot($content, $url) {
     return $snapshot;
 }
 
+/**
+* 
+* Check if something exists
+*
+* @param integer  $refID                Reference ID in table
+* @param string   $table                Provided table
+* @param string   $identificatior       Identificator 
+* @return boolean
+*
+*/
 function exists($refID, $table, $identificator = "`ID`") {
     $ci =& get_instance();
     $query = $ci->db->query("SELECT ID FROM `".$table."` WHERE $identificator = '".$refID."' LIMIT 1");
     return ($query->num_rows() ? true : false);
 }
 
+/**
+* 
+* Get location of an IP by IPStack.com Free API
+*
+* @param string   $IP               IP to provide
+* @param boolean  $useHead          Use headers?
+* @return string
+*
+*/
 function get_ip_location($IP) {
     $APIKEY     = "189dadc9f0e4de1b77feaf12215cf5e9";
     $info       = json_decode(get_data("http://api.ipstack.com/$IP?access_key=$APIKEY&format=1"));
     return $info->city . ", " . $info->region_name . ", " . $info->country_name;
 }
 
+/**
+* 
+* Format a size (number)
+*
+* @param integer  $number           Number to be formatted
+* @return string
+*
+*/
 function format_size($number) {
     switch ($number) {
         case $number < 1024:
@@ -379,40 +396,60 @@ function format_size($number) {
     return $size;
 }
 
+/**
+* 
+* Get size of a resource file
+*
+* @param string   $url              URL to check
+* @param boolean  $formatSize       Should return the number of the formatted number?
+* @param boolean  $useHead          Use headers?
+* @return string
+*
+*/
 function getRemoteFilesize($url, $formatSize = true, $useHead = true)
 {
     if (false !== $useHead) {
         stream_context_set_default(array('http' => array('method' => 'HEAD')));
     }
-    $head = array_change_key_case(get_headers($url, 1));
-    // content-length of download (in bytes), read from Content-Length: field
-    $clen = isset($head['content-length']) ? $head['content-length'] : 0;
+    @$headers = get_headers($url, 1);
+    if($headers) {
+        $head = array_change_key_case(get_headers($url, 1));
 
-    // cannot retrieve file size, return "-1"
-    if (!$clen) {
-        return 0;
-    }
+        $clen = isset($head['content-length']) ? $head['content-length'] : 0;
 
-    if (!$formatSize) {
-        return $clen; // return size in bytes
-    }
+        if (!$clen) {
+            return 0;
+        }
 
-    $size = $clen;
-    switch ($clen) {
-        case $clen < 1024:
-            $size = $clen .' B'; break;
-        case $clen < 1048576:
-            $size = round($clen / 1024, 2) .' KiB'; break;
-        case $clen < 1073741824:
-            $size = round($clen / 1048576, 2) . ' MiB'; break;
-        case $clen < 1099511627776:
-            $size = round($clen / 1073741824, 2) . ' GiB'; break;
-    }
+        if (!$formatSize) {
+            return $clen; 
+        }
 
-    return $size; // return formatted size
+        $size = $clen;
+        switch ($clen) {
+            case $clen < 1024:
+                $size = $clen .' B'; break;
+            case $clen < 1048576:
+                $size = round($clen / 1024, 2) .' KiB'; break;
+            case $clen < 1073741824:
+                $size = round($clen / 1048576, 2) . ' MiB'; break;
+            case $clen < 1099511627776:
+                $size = round($clen / 1073741824, 2) . ' GiB'; break;
+        }
+
+        return $size;
+    } else return "unavailable site.";
 }
 
 /* God bless Stack */
+/**
+* 
+* Get domain root
+*
+* @param string  $url               URL to check
+* @return string
+*
+*/
 function get_domain($url)
 {
     $pieces = parse_url($url);
@@ -424,12 +461,33 @@ function get_domain($url)
 }
 /**/
 
+
+/**
+* 
+* Get HTTP Code of a website
+*
+* @param string  $url  URL to check
+* @return string
+*
+*/
 function get_http_code($url) 
 {
     $headers = get_headers($url);
     return substr($headers[0], 9, 3);
 }
 
+
+/**
+* 
+* Calculate "OUR GRADE" @ Results
+*
+* @param integer $size              File size
+* @param string  $ext               Extension type
+* @param integer $redirect_time     Redirect time (if any?!)
+* @param integer $http_code         HTTP Code of file
+* @return string
+*
+*/
 function calculate_grade($size, $ext, $redirect_time, $http_code) 
 {
     switch($ext) {
@@ -466,11 +524,26 @@ function calculate_grade($size, $ext, $redirect_time, $http_code)
     }
 }
 
+/**
+* 
+* Get a random background
+*
+* @return string
+*
+*/
 function random_hero() {
     $color = array("is-primary is-bold", "is-primary", "is-link is-bold", "is-link", "is-success is-bold", "is-success");
     return $color[mt_rand(0, count($color) - 1)];
 }
 
+/**
+* 
+* Get the HTML version of a webpage by publicId
+*
+* @param string $public_id Type to analyze
+* @return string
+*
+*/
 function get_html_version($public_id) {
     $public_id = strtoupper($public_id);
     if(strlen($public_id) < 3) return "HTML5";
@@ -501,6 +574,40 @@ function get_html_version($public_id) {
             return "unknown";
         break;
     }
+}
+
+/**
+* 
+* Check if URL is alive
+*
+* @param string $url URL to check
+* @return string
+*
+*/
+function check_if_alive($url) {
+
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_HEADER, 1);
+    curl_setopt($ch , CURLOPT_RETURNTRANSFER, 1);
+    $data = curl_exec($ch);
+    $headers = curl_getinfo($ch);
+    curl_close($ch);
+
+    if(in_array($headers['http_code'], array("200", "301", "302"))) return true;
+    else return false;
+}
+
+/**
+* 
+* Convert special characters from HTML Validator API to readable ones
+*
+* @param string $text Text to convert 
+* @return string
+*
+*/
+function alive_validate_messages($text) {
+    return htmlentities(str_replace('u201c', '<', str_replace('u201d', '>', $text)));
 }
 
 ?>

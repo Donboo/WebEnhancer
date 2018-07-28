@@ -88,6 +88,23 @@ $lang['main_answer_seo']             = 'Optimizarea SEO este unul dintre cei mai
 $lang['main_descrleng']              = 'Lungime descriere';
 $lang['main_titleleng']              = 'Lungime titlu';
 $lang['main_keywordsleng']           = 'Lungime cuvinte cheie';
+$lang['main_guidelines']             = 'WebEnhancer sugerează următoarele practici:<br><br>
+                                        <ul><li>Urmăreste să îndeplinești cerințele WCAG (Web Content Accessibility Guidelines)</li>
+                                        <li>Urmărește un concept grafic și respectă-l</li>
+                                        <li>Nu încărca librării inutile. Sigur nu poți face ceea ce vrei și fără librării?</li>
+                                        <li>Timpul de încărcare este cel mai important. Pentru fiecare secundă în plus, pierzi utilizatori.</li>
+                                        <li>Minimizează numărul de request-uri și de redirecționări</li>
+                                        <li>Nu uita să folosești CDN-uri (Content Delivery Network) și ai grijă ca acestea să fie cookieless</li>
+                                        <li>În cazul erorilor apărute pe site, nu le afișa, ci înregistrează-le</li>
+                                        <li>Folosește charset-ul UTF-8. Nu te expune vulnerabilităților.</li>
+                                        <li>Ai grijă la codul pe care îl scrii din prima, nu te baza pe retuș.</li>
+                                        <li>MySQL: Folosește clauza LIMIT și nu selecta informațiile de care nu ai nevoie</li>
+                                        <li>Folosește un sistem de caching pentru informațiile din baza de date.</li>
+                                        <li>Nu stoca parole și alte informații sensibile în cookie. Folosește sesiunea, deoarece informațiile sunt stocate pe server, nu în browser.</li>
+                                        <li>Păstrează navigabilitatea site-ului la vedere. Trebuie să știi unde ești și cum să te întorci.</li>
+                                        <li>Setează sesiunile să expire după un anumit timp.</li>
+                                        <li>Erorile HTTP din request-uri tergiversează încărcarea paginii.</li></ul>
+                                        ';
     
 $lang['dashboard_project_name']      = 'Nume proiect';
 $lang['dashboard_first_scan']        = 'Prima scanare';

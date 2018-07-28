@@ -96,6 +96,23 @@ $lang['main_answer_seo']            = 'SEO optimisation is one of the most impor
 $lang['main_descrleng']             = 'Description length';
 $lang['main_titleleng']             = 'Title length';
 $lang['main_keywordsleng']          = 'Keywords length';
+$lang['main_guidelines']            = 'WebEnhancer suggests the following practices:<br><br>
+                                        <ul><li>Follow the WCAG (Web Content Accessibility Guidelines)</li>
+                                        <li>Follow a graphic concept and respect it</li>
+                                        <li>Do not load useless libraries. Are you sure that you can not do it without libraries?</li>
+                                        <li>The load time is the most important thing. For every second spent, you lose visitors.</li>
+                                        <li>Minimize the number of requests and redirects</li>
+                                        <li>Do not forget to use CDNs (Content Delivery Network) and take care to be cookieless</li>
+                                        <li>If errors appear on your site, do not display them, rather log them</li>
+                                        <li>Use the UTF-8 charset. Do not expose yourself</li>
+                                        <li>Be aware of the code that you write, do not count on the makeover</li>
+                                        <li>MySQL: Use the LIMIT clause and do not select information that you do not need</li>
+                                        <li>Use a caching system for information that you extract from the database</li>
+                                        <li>Do not store password and another sensitive information in cookies. Use sessions, because the information is stored server-side, not in browser</li>
+                                        <li>Keep breadcrumbs up. You have to know where you are and how to return</li>
+                                        <li>Set sessions to expire after a certain time</li>
+                                        <li>HTTP errors from requests delay loading</li></ul>
+                                        ';
 
 $lang['dashboard_project_name']     = 'Project name';
 $lang['dashboard_first_scan']       = 'First scan';
