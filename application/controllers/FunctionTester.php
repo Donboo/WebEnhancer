@@ -28,7 +28,9 @@ class FunctionTester extends CI_Controller
         self::test_transform_array_into_argv(array("name"=>"webenhancer"));
         self::test_get_html_version('-//W3C//DTD XHTML 1.1//EN');
         self::test_calculate_grade(1024*149, "js", 0, 200);
-        self::test_get_http_code("http://youknowwhatimsaying.psd");
+        self::test_get_http_code("342", 1);
+        self::test_get_http_code("http://youknowwhatimsaying.psd/", 1);
+        self::test_get_http_code("http://youknowwhatimsaying.psd/", 0);
     }
     
     private function test_get_time_difference($date) {
@@ -111,12 +113,12 @@ class FunctionTester extends CI_Controller
         echo $this->unit->run($test, $expected_result, $test_name, '<b>Expected output:</b> '.$expected_result.'<br><b>Because:</b> '.$test_arg.'.');
     }
     
-    private function test_get_http_code($url) {
+    private function test_get_http_code($url, $mode) {
         $test = get_http_code($url);
         
         $expected_result = "error";
         $test_name       = 'function get_http_code';
-        $test_arg        = 'testing invalid URL';
+        $test_arg        = $mode ? 'testing invalid arguments' : 'testing valid arguments';
 
         echo $this->unit->run($test, $expected_result, $test_name, '<b>Expected output:</b> '.$expected_result.'<br><b>Because:</b> '.$test_arg.'.');
     }
