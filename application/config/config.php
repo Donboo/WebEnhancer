@@ -521,3 +521,69 @@ $config['tables'] = array(
 
 $config['recaptcha_sitekey'] = '6LctA1cUAAAAAEt6Q--_aC4sidzRtEp-y6cLrT3D';
 $config['recaptcha_secret']  = '6LctA1cUAAAAAHoUV8ZJnyNwGYB59h1SVaHaJGJS';
+
+$config['sqli_syntaxes']     = array(    
+        "'",
+        '"',
+        ';',
+        ')',
+        '(',
+        '.',
+        '--'
+);
+
+$config['sqli_errors']       = array(		
+        "supplied argument is not a valid MySQL", //MySQL
+		"mysql_fetch_array\\(\\)",
+		"on MySQL result index",
+		"You have an error in your SQL syntax;",
+		"You have an error in your SQL syntax near",
+		"MySQL server version for the right syntax to use",
+		"\\[MySQL\\]\\[ODBC",
+		"Column count doesn't match",
+		"the used select statements have different number of columns",
+		"Table '[^']+' doesn't exist",
+		"DB Error: unknown error",
+		":[\s]*mysql",
+		"mysql_fetch",
+		"System\\.Data\\.OleDb\\.OleDbException", //MS SQL
+		"\\[SQL Server\\]",
+		"\\[Microsoft\\]\\[ODBC SQL Server Driver\\]",
+		"\\[SQLServer JDBC Driver\\]",
+		"\\[SqlException",
+		"System.Data.SqlClient.SqlException",
+		"Unclosed quotation mark after the character string",
+		"'80040e14'",
+		"mssql_query\\(\\)",
+		"odbc_exec\\(\\)",
+		"Microsoft OLE DB Provider for ODBC Drivers",
+		"Microsoft OLE DB Provider for SQL Server",
+		"Incorrect syntax near",
+		"Syntax error in string in query expression",
+		"ADODB\\.Field \\(0x800A0BCD\\)<br>",
+		"Procedure '[^']+' requires parameter '[^']+'",
+		"ADODB\\.Recordset'",
+		"Microsoft SQL Native Client error",
+		"Unclosed quotation mark after the character string", 
+		"SQLCODE", //DB2"
+		"DB2 SQL error:",
+		"SQLSTATE",
+		"Sybase message:", //Sybase
+		"Syntax error in query expression", //Access
+		"Data type mismatch in criteria expression.",
+		"Microsoft JET Database Engine",
+		"\\[Microsoft\\]\\[ODBC Microsoft Access Driver\\]",
+		"(PLS|ORA)-[0-9][0-9][0-9][0-9]", //Oracle
+		"PostgreSQL query failed:", //PostGre
+		"supplied argument is not a valid PostgreSQL result",
+		"pg_query\\(\\) \\[:",
+		"pg_exec\\(\\) \\[:",
+		"com\\.informix\\.jdbc", //Informix
+		"Dynamic Page Generation Error:",
+		"Dynamic SQL Error",
+		"\\[DM_QUERY_E_SYNTAX\\]", //DML
+		"has occurred in the vicinity of:",
+		"A Parser Error \\(syntax error\\)",
+		"java\\.sql\\.SQLException",//Java
+		"\\[Macromedia\\]\\[SQLServer JDBC Driver\\]" //Coldfusion	
+);

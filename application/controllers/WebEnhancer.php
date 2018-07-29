@@ -56,7 +56,12 @@ class WebEnhancer extends CI_Controller
         $this->generalData = array(
             "security"=>array(
                 "xssdesc"=>"none",
-                "sqlidesc"=>"none",
+                "sqlidesc"=>array(
+                    "query"=>"none",
+                    "method"=>"none",
+                    "url"=>"none",
+                    "error"=>"none"
+                ),
                 "misdesc"=>array(
                     "autocompletedesc"=>"none",
                     "headersdesc"=>"none",
@@ -135,7 +140,12 @@ class WebEnhancer extends CI_Controller
         $data = json_encode(array(
             "security"=>array(
                 "xssdesc"=>"none",
-                "sqlidesc"=>"none",
+                "sqlidesc"=>array(
+                    "query"=>$this->generalData['security']['sqlidesc']['query'],
+                    "method"=>$this->generalData['security']['sqlidesc']['method'],
+                    "url"=>$this->generalData['security']['sqlidesc']['url'],
+                    "error"=>$this->generalData['security']['sqlidesc']['error']
+                ),
                 "misdesc"=>array(
                     "autocompletedesc"=>$this->generalData['security']['mis']['autocompletedesc'],
                     "headersdesc"=>$this->generalData['security']['mis']['headersdesc'],
@@ -163,7 +173,6 @@ class WebEnhancer extends CI_Controller
             )
         ));
         $json_data  = json_encode($data,JSON_UNESCAPED_SLASHES);
-        //die(str_replace('"{', '{', str_replace('}"', '}',str_replace('\\/\\/', '//', str_replace('\"', '"', str_replace('\\\"', '"', $json_data))))));
         
         $score = json_encode(array(
             "security"=>array(
@@ -338,7 +347,6 @@ class WebEnhancer extends CI_Controller
                 array_push($errors, $error);
             }
         }
-//        die(print_r($scripts));
 
         // DELETE SCRIPTS
         for ($member_count = $dom->getElementsByTagName("script")->length; --$member_count >= 0; ) {
@@ -386,6 +394,7 @@ class WebEnhancer extends CI_Controller
 
         // execute post
         $result = curl_exec($ch);
+        curl_close($ch);
         
         $newjson            ='{"messages":{';
         $result_decoded     = json_decode($result);
@@ -405,9 +414,6 @@ class WebEnhancer extends CI_Controller
         
         $this->generalData['code']['validdesc'] = $newjson;
         $this->generalScore['code']['valid']    = ($counter>0) ? 0 : 25;
-
-        // close connection
-        curl_close($ch);
         
         $sourceUrl          = parse_url($given_url);
         $sourceUrl          = $sourceUrl['host'];
@@ -415,18 +421,6 @@ class WebEnhancer extends CI_Controller
         sleep(3);
         
         echo "<script type='text/javascript'>window.open('".base_url("webenhancer/domelements/".$sourceUrl)."')</script>";
-        
-        // count tags exclude <br> <meta><link>
-        
-        // MINIFY CONTENT
-        
-        /* COUNT TAGS
-        $html_tag = countable_html_tags();
-        $output='';
-        foreach($html_tag as $tag) {
-            $output .= $tag . ": " . substr_count($url_content, "<" . $tag) . ", ";
-        }
-        */
     }
     
     // TEST SECURITY AUDIT
@@ -463,22 +457,244 @@ class WebEnhancer extends CI_Controller
     // TEST SECURITY AUDIT: SQLI
     function test_audit_sql($given_url) {
         
+        require_once(APPPATH.'libraries\Analyzerforms.php'); 
+        require_once(APPPATH.'libraries\Analyzerinputs.php'); 
+        require_once(APPPATH.'libraries\Analyzertextareas.php'); 
+        require_once(APPPATH.'libraries\AuxClass.php'); 
+        
         // VERSIUNEA 1 - INPUTURI
         $url_content = file_get_contents($given_url); 
 
         $dom = new DOMDocument;
-        
         libxml_use_internal_errors(true);
         $dom->loadHTML($url_content);
         libxml_clear_errors(true);
         
-        $form_actions      = array();
-        $form_methods      = array();
+        $forms_array        = array();
+        $input_array        = array();
+        $textarea_array     = array();
+        $forms_count        = 0;
+        $sqli_syntaxes      = $this->config->item('sqli_syntaxes');
+        $sqli_errors        = $this->config->item('sqli_errors');
         
-        foreach ($dom->getElementsByTagName('form') as $node)
+        foreach ($dom->getElementsByTagName('form') as $form)
         {
-            strlen($node->getAttribute('action')) ? array_push($form_actions, $node->getAttribute('action')) : array_push($form_methods, $node->getAttribute('method') . "[urlform] $given_url [/urlform]");
+            $post_values = array();
+            
+            ($form->getAttribute('id') !== null)     ?      $form_id     = htmlspecialchars($form->getAttribute('id'))       : $form_id       = '';
+            ($form->getAttribute('name') !== null)   ?      $form_name   = htmlspecialchars($form->getAttribute('name'))     : $form_name     = '';
+            ($form->getAttribute('method') !== null) ?      $form_method = htmlspecialchars($form->getAttribute('method'))   : $form_method   = 'get';
+            ($form->getAttribute('action') !== null) ?      $form_action = htmlspecialchars($form->getAttribute('action'))   : $form_action   = '';
+            $form_method = strtolower($form_method);
+
+            if (empty($form_action))
+            {
+                $firstIndexOfSlash = strpos($given_url, '/', strlen($given_url) - 1);
+                $form_action = substr($given_url, $firstIndexOfSlash + 1, strlen($given_url));
+            }
+
+            $form_added = new Analyzerforms($form_id, $form_name, $form_method, $form_action, $forms_count);
+            array_push($forms_array, $form_added);
+            
+            foreach ($dom->getElementsByTagName('input') as $input)
+            {
+                ($input->getAttribute('id') !== null)       ? $input_id      = htmlspecialchars($input->getAttribute('id'))      : $input_id = '';
+                ($input->getAttribute('name') !== null)     ? $input_name    = htmlspecialchars($input->getAttribute('name'))    : $input_name = '';
+                ($input->getAttribute('value') !== null)    ? $input_value   = htmlspecialchars($input->getAttribute('value'))   : $input_value = '';
+                ($input->getAttribute('type') !== null)     ? $input_type    = htmlspecialchars($input->getAttribute('type'))    : $input_type = '';
+                
+                $input_added = new Analyzerinputs($input_id, $input_name, $form_id, $form_name, $input_value, $input_type, $forms_count);
+                array_push($input_array, $input_added);
+            }
+            
+            foreach ($dom->getElementsByTagName('textarea') as $textarea)
+            {
+                ($textarea->getAttribute('id') !== null)       ? $textarea_id      = htmlspecialchars($textarea->getAttribute('id'))      : $textarea_id    = '';
+                ($textarea->getAttribute('name') !== null)     ? $textarea_name    = htmlspecialchars($textarea->getAttribute('name'))    : $textarea_name  = '';
+                ($textarea->nodeValue !== null)                ? $textarea_value   = htmlspecialchars($textarea->nodeValue)               : $textarea_value = '';
+                
+                $textarea_added = new Analyzertextareas($input_id, $input_name, $form_id, $form_name, $input_value, "textarea", $forms_count);
+                array_push($textarea_array, $textarea_added);
+            }
+
+            $forms_count++;
         }
+
+        for ($i = 0; $i < sizeof($forms_array); $i++)
+        {
+            $form_current                 = $forms_array[$i];
+            $form_current_id              = $form_current->getId();
+            $form_current_name            = $form_current->getName();
+            $form_current_method          = $form_current->getMethod();
+            $form_current_action          = $form_current->getAction();
+            $form_current_num             = $form_current->getFormNum();
+            
+            $form_current_inputs          = array();
+            
+            for ($j = 0; $j < sizeof($input_array); $j++)
+            {
+                $input_current           = $input_array[$j];
+                $input_currentIdOfForm   = $input_current->getIdOfForm();
+                $input_currentNameOfForm = $input_current->getNameOfForm();
+                $input_currentFormNum    = $input_current->getFormNum();
+
+                if ($form_current_num == $input_currentFormNum)
+                {
+                    array_push($form_current_inputs, $input_current);
+                }
+            }
+            
+            for ($j = 0; $j < sizeof($textarea_array); $j++)
+            {
+                $textarea_current           = $textarea_array[$j];
+                $textarea_currentIdOfForm   = $textarea_current->getIdOfForm();
+                $textarea_currentNameOfForm = $textarea_current->getNameOfForm();
+                $textarea_currentFormNum    = $textarea_current->getFormNum();
+
+                if ($form_current_num == $textarea_currentFormNum)
+                {
+                    array_push($form_current_inputs, $textarea_current); // merge them......
+                }
+            }
+            
+            for ($k = 0; $k < sizeof($form_current_inputs); $k++)
+            {
+                for ($plIndex = 0; $plIndex < sizeof($sqli_syntaxes); $plIndex++)
+                {
+                    $form_current_input        = $form_current_inputs[$k];
+                    $form_current_input_name   = $form_current_input->getName();
+                    $form_current_input_type   = $form_current_input->getType();
+                    $form_current_input_value  = $form_current_input->getValue();
+                    
+                    if ($form_current_input_type != 'reset')
+                    {
+                        $arrayOfValues = array();
+
+                        $otherInputs = array();
+                        for ($l = 0; $l < sizeof($form_current_inputs); $l++)
+                        {
+                            if ($form_current_input->getName() != $form_current_inputs[$l]->getName())
+                            {
+                                array_push($otherInputs, $form_current_inputs[$l]);
+                            }
+                        }
+
+                        $postObject = new AuxClass($form_current_input_name, $sqli_syntaxes[$plIndex]);
+
+                        array_push($arrayOfValues, $postObject);
+                        for ($m = 0; $m < sizeof($otherInputs); $m++)
+                        {
+                            $currentOther = $otherInputs[$m];
+                            $currentOtherType = $currentOther->getType();
+                            $currentOtherName = $currentOther->getName();
+                            $currentOtherValue = $currentOther->getValue();
+                            if ($currentOtherType == 'text' || $currentOtherType == 'password')
+                            {
+                                $postObject = new AuxClass($currentOtherName, 'oPtImaL123??Leng');
+                                array_push($arrayOfValues, $postObject);
+                            }
+                            else
+                            if ($currentOtherType == 'checkbox' || $currentOtherType == 'submit')
+                            {
+                                $postObject = new AuxClass($currentOtherName, $currentOtherValue);
+                                array_push($arrayOfValues, $postObject);
+                            }
+                            else
+                            if ($currentOtherType == 'radio')
+                            {
+                                $postObject = new AuxClass($currentOtherName, $currentOtherValue);
+
+                                $found = false;
+                                for ($n = 0; $n < sizeof($arrayOfValues); $n++)
+                                {
+                                    if ($arrayOfValues[$n]->getName() == $postObject->getName())
+                                    {
+                                        $found = true;
+                                        break;
+                                    }
+                                }
+
+                                if (!$found) array_push($arrayOfValues, $postObject);
+                            }
+                        }
+                        if ($form_current_method == 'post')
+                        {
+                            if ($given_url[strlen($given_url) - 1] == '/') $actionUrl = $given_url . $form_current_action;
+                            else $actionUrl = $given_url . '/' . $form_current_action;
+                            
+                            for ($p = 0; $p < sizeof($arrayOfValues); $p++)
+                            {
+                                $currentPostValue = $arrayOfValues[$p];
+                                $currentPostValueName = $currentPostValue->getName();
+                                $currentPostValueValue = $currentPostValue->getValue();
+                                $tempArray = array(
+                                    $currentPostValueName => $currentPostValueValue
+                                );
+                                $post_values = array_merge($post_values, $tempArray);
+                            }
+
+                            $ch = curl_init();
+
+                            // set the url, number of POST vars, POST data
+                            curl_setopt($ch, CURLOPT_URL, $actionUrl);
+                            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                            curl_setopt($ch, CURLOPT_POST, 1);
+                            curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($post_values));
+                            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+                            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+
+                            // execute post
+                            $result = curl_exec($ch);
+
+                            curl_close($ch);
+
+                            $vulnerabilityFound = false;
+                            for ($warningIndex = 0; $warningIndex < sizeof($sqli_errors); $warningIndex++)
+                            {
+                                $regularExpression = "/$sqli_errors[$warningIndex]/";
+                                if (preg_match($regularExpression, $result))
+                                {
+                                    $vulnerabilityFound = true;
+                                    break;
+                                }
+                            }
+
+                            if ($vulnerabilityFound)
+                            {
+                                $totalTestStr = ''; 
+                                for ($p = 0; $p < sizeof($arrayOfValues); $p++)
+                                {
+                                    $currentPostValue = $arrayOfValues[$p];
+                                    $currentPostValueName = $currentPostValue->getName();
+                                    $currentPostValueValue = $currentPostValue->getValue();
+                                    $totalTestStr.= $currentPostValueName;
+                                    $totalTestStr.= '=';
+                                    $totalTestStr.= $currentPostValueValue;
+                                    if ($p != (sizeof($arrayOfValues) - 1)) $totalTestStr.= '&';
+                                }
+
+                                $form_current_method = strtolower($form_current_method);
+                                
+                                $this->generalData["security"]["sqlidesc"]['query']     = htmlspecialchars($totalTestStr);
+                                $this->generalData["security"]["sqlidesc"]['url']       = htmlspecialchars($actionUrl);
+                                $this->generalData["security"]["sqlidesc"]['method']    = $form_current_method;
+                                $this->generalData["security"]["sqlidesc"]['error']     = $regularExpression;
+                                
+                                echo 'SQL Injection Present!<br />Query: ' . HtmlSpecialChars($totalTestStr) . '<br />';
+                                echo 'Method: ' . $form_current_method . '<br />';
+                                echo 'Url: ' . HtmlSpecialChars($actionUrl) . '<br />';
+                                echo 'Error: ' . $regularExpression . '';
+
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        
+
         
         /*$form = substr($url_content, strpos($url_content, "<form"));    
         $cont = get_string_between($form, "<form", "</form>");
@@ -734,7 +950,8 @@ class WebEnhancer extends CI_Controller
         * Continue Load test (because of new tab)
         *
         */
-        $this->generalData['speed']['loaddesc'] = $this->session->userdata('loadtest');
+        die("loaddd message" . GlobalVars::loadMessage());
+        $this->generalData['speed']['loaddesc'] = GlobalVars::loadMessage();
         
         $loadtest_result                        = $this->generalData['speed']['loaddesc'];
         $this->generalScore['speed']['load']    = ($loadtest_result->loadTime < 3) ? 1 : 0;
@@ -744,7 +961,7 @@ class WebEnhancer extends CI_Controller
         * Continue DOM elements test (because of new tab)
         *
         */
-        $this->generalData['code']['domdesc']   = $this->session->userdata('domelements');
+        $this->generalData['code']['domdesc']   = GlobalVars::domMessage();
         
         if($this->generalData['code']['domdesc'] < 1000)    $this->generalScore['code']['dom']      = 25;
         else                                                $this->generalScore['code']['dom']      = 0;
@@ -871,7 +1088,7 @@ class WebEnhancer extends CI_Controller
     
     function returnload() {
         if(isset($_POST["cookieset"])) {
-            $this->session->set_userdata('loadtest', $_POST["cookieset"]);
+            GlobalVars::setLoadMessage($_POST["cookieset"]);
             echo "200"; // bcoz return won't.
             return "200"; 
         } else {
@@ -883,7 +1100,7 @@ class WebEnhancer extends CI_Controller
     
     function returndomelements() {
         if(isset($_POST["domelements"])) {
-            $this->session->set_userdata('domelements', $_POST["domelements"]);
+            GlobalVars::setDOMMessage($_POST["domelements"]);
             die("200"); // bcoz return won't.
         } else {
             $this->session->set_userdata('domelements', "0");

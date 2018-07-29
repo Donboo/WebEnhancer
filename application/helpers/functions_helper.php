@@ -157,7 +157,7 @@ function get_string_between($string, $start, $end){
     return substr($string, $ini, $len);
 }
 
-function sqli_syntaxes() {
+/*function sqli_syntaxes() {
     $syntax = array(
         'version'       => array(
                                     'normal'        => "' UNION ALL SELECT NULL,version()--",
@@ -171,7 +171,7 @@ function sqli_syntaxes() {
                                 )
     );
     return $syntax;
-}
+}*/
 
 function xss_syntaxes() {
     $syntax = array(
@@ -472,8 +472,9 @@ function get_domain($url)
 */
 function get_http_code($url) 
 {
-    $headers = get_headers($url);
-    return substr($headers[0], 9, 3);
+    @$headers = get_headers($url);
+    if($headers) return substr($headers[0], 9, 3);
+    else return "error";
 }
 
 
@@ -610,4 +611,25 @@ function alive_validate_messages($text) {
     return htmlentities(str_replace('u201c', '<', str_replace('u201d', '>', $text)));
 }
 
+/**
+* 
+* Transform an array into valid POST arguments 
+*
+* @param  array  $array
+* @return string
+*
+*/
+function transform_array_into_argv($array) {
+    $argument_id    = 0;
+    $final_string   = "";
+    
+    foreach($array as $argument) { 
+        $key = array_keys($array);
+        $val = array_values($array);
+        $final_string = $key[$argument_id]."=".$val[$argument_id]."&";
+        $argument_id++;
+    }
+    
+    return rtrim($final_string, '&');
+}
 ?>
