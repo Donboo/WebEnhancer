@@ -22,7 +22,6 @@ class GlobalVars
 
         self::$load_message = null;
         self::$dom_message  = null;
-        self::$unit_string  = null;
         
         self::$initialized  = true;
     }

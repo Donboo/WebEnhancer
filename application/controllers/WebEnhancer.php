@@ -319,9 +319,18 @@ class WebEnhancer extends CI_Controller
         $sourceUrl                              = parse_url($given_url);
         $sourceUrl                              = $sourceUrl['host'];
         
-        sleep(3);
-        
         echo "<script type='text/javascript'>window.open('".base_url("webenhancer/loadtest/".$sourceUrl)."')</script>";
+        
+        /*
+        *
+        * Continue Load test (because of new tab)
+        *
+        */
+        //die("loaddd message" . GlobalVars::loadMessage());
+        $this->generalData['speed']['loaddesc'] = ($this->session->userdata('loadtest') != null) ? $this->session->userdata('loadtest') : "none" ;
+        
+        $loadtest_result                        = $this->generalData['speed']['loaddesc'];
+        $this->generalScore['speed']['load']    = ($loadtest_result->loadTime < 3) ? 1 : 0;
         
         $dom = new DOMDocument;
         
@@ -418,9 +427,17 @@ class WebEnhancer extends CI_Controller
         $sourceUrl          = parse_url($given_url);
         $sourceUrl          = $sourceUrl['host'];
         
-        sleep(3);
-        
         echo "<script type='text/javascript'>window.open('".base_url("webenhancer/domelements/".$sourceUrl)."')</script>";
+        
+        /*
+        *
+        * Continue DOM elements test (because of new tab)
+        *
+        */
+        $this->generalData['code']['domdesc']               = ($this->session->userdata('domelements') != null) ? $this->session->userdata('domelements') : "none" ;
+        
+        if($this->generalData['code']['domdesc'] < 1000)    $this->generalScore['code']['dom']      = 25;
+        else                                                $this->generalScore['code']['dom']      = 0;
     }
     
     // TEST SECURITY AUDIT
@@ -944,28 +961,6 @@ class WebEnhancer extends CI_Controller
     }
     
     function test_seo($given_url) {
-        
-        /*
-        *
-        * Continue Load test (because of new tab)
-        *
-        */
-        die("loaddd message" . GlobalVars::loadMessage());
-        $this->generalData['speed']['loaddesc'] = GlobalVars::loadMessage();
-        
-        $loadtest_result                        = $this->generalData['speed']['loaddesc'];
-        $this->generalScore['speed']['load']    = ($loadtest_result->loadTime < 3) ? 1 : 0;
-        
-        /*
-        *
-        * Continue DOM elements test (because of new tab)
-        *
-        */
-        $this->generalData['code']['domdesc']   = GlobalVars::domMessage();
-        
-        if($this->generalData['code']['domdesc'] < 1000)    $this->generalScore['code']['dom']      = 25;
-        else                                                $this->generalScore['code']['dom']      = 0;
-        
         self::test_seo_meta($given_url);
         self::test_seo_responsive($given_url);
     }
@@ -1088,7 +1083,8 @@ class WebEnhancer extends CI_Controller
     
     function returnload() {
         if(isset($_POST["cookieset"])) {
-            GlobalVars::setLoadMessage($_POST["cookieset"]);
+            $this->session->set_userdata('loadtest', $_POST["cookieset"]);
+            //die("wee" . GlobalVars::loadMessage($_POST["cookieset"]));
             echo "200"; // bcoz return won't.
             return "200"; 
         } else {
@@ -1100,7 +1096,7 @@ class WebEnhancer extends CI_Controller
     
     function returndomelements() {
         if(isset($_POST["domelements"])) {
-            GlobalVars::setDOMMessage($_POST["domelements"]);
+            $this->session->set_userdata('domelements', $_POST["domelements"]);
             die("200"); // bcoz return won't.
         } else {
             $this->session->set_userdata('domelements', "0");

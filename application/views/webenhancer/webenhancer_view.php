@@ -108,7 +108,7 @@
                                     <div class="tile is-parent is-vertical">
                                         <article class="tile is-child notification is-link">
                                             <p class="title">
-                                                <?php echo $data_result->speed->loaddesc->loadTime; ?>s
+                                                <?php echo ($data_result->speed->loaddesc != "none") ? $data_result->speed->loaddesc->loadTime : "Could not calculate"; ?>s
                                             </p>
                                             <p class="subtitle">
                                                 Load Time
@@ -116,7 +116,7 @@
                                         </article>
                                         <article class="tile is-child notification is-success">
                                             <p class="title">
-                                                <?php echo $data_result->speed->loaddesc->totalResources; ?>
+                                                <?php echo ($data_result->speed->loaddesc != "none") ? $data_result->speed->loaddesc->totalResources : "Could not calculate"; ?>
                                             </p>
                                             <p class="subtitle">
                                                 Total Resources
@@ -137,7 +137,7 @@
                                     <div class="tile is-parent is-vertical">
                                         <article class="tile is-child notification is-link">
                                             <p class="title" id="totalSize">
-                                                Calculating...
+                                                <?php echo ($data_result->speed->loaddesc != "none") ? "Calculating..." : "Could not calculate"; ?>
                                             </p>
                                             <p class="subtitle">
                                                 <abbr title='Keep it under 2MB. Seriously.'>Total Res. Size</abbr>
@@ -145,7 +145,7 @@
                                         </article>
                                         <article class="tile is-child notification is-warning">
                                             <p class="title">
-                                                <?php echo $data_result->speed->loaddesc->domTime; ?>
+                                                <?php echo ($data_result->speed->loaddesc != "none") ? $data_result->speed->loaddesc->domTime : "Could not calculate"; ?>
                                             </p>
                                             <p class="subtitle">
                                                 DOM Time
@@ -178,46 +178,48 @@
                         <?php 
                         $load_id    = 0;
                         $totalSize  = 0;
-                        foreach($data_result->speed->loaddesc->resources as $loaddata): 
-                        $totalSize += getRemoteFilesize($data_result->speed->loaddesc->resources->{$load_id}->name, false);
-                        ?>
-                            <tr>
-                                <td><span class="responsecodehttp resp<?php echo get_http_code($data_result->speed->loaddesc->resources->{$load_id}->name); ?>"><?php echo get_http_code($data_result->speed->loaddesc->resources->{$load_id}->name); ?></span></td>
-                                <td>GET</td>
-                                <td>
-                                    <?php echo ($data_result->speed->loaddesc->resources->{$load_id}->name); ?>
-                                </td>
-                                <td>
-                                    <?php echo get_domain($data_result->speed->loaddesc->resources->{$load_id}->name); ?>
-                                </td>
-                                <td>document</td>
-                                <td>
-                                    <?php echo pathinfo(parse_url($data_result->speed->loaddesc->resources->{$load_id}->name, PHP_URL_PATH), PATHINFO_EXTENSION); ?>
-                                </td>
-                                <td>
-                                    <?php echo $data_result->speed->loaddesc->resources->{$load_id}->redirectTime; ?>
-                                </td>
-                                <td>
-                                    <?php echo $data_result->speed->loaddesc->resources->{$load_id}->dnsLookup; ?>
-                                </td>
-                                <td>
-                                    <?php echo $data_result->speed->loaddesc->resources->{$load_id}->fetchUntilResponseEnd; ?>
-                                </td>
-                                <td>
-                                    <?php echo getRemoteFilesize($data_result->speed->loaddesc->resources->{$load_id}->name); ?>
-                                </td>
-                                <td>
-                                    <?php echo calculate_grade(
-                                                getRemoteFilesize($data_result->speed->loaddesc->resources->{$load_id}->name, false), 
-                                                pathinfo(parse_url($data_result->speed->loaddesc->resources->{$load_id}->name, PHP_URL_PATH), PATHINFO_EXTENSION), 
-                                                $data_result->speed->loaddesc->resources->{$load_id}->redirectTime, 
-                                                get_http_code($data_result->speed->loaddesc->resources->{$load_id}->name)
-                                            );  ?>
-                                </td>
-                            </tr>
-                            <?php  
-                        $load_id++; 
-                        endforeach; 
+                        if($data_result->speed->loaddesc != "none") {
+                            foreach($data_result->speed->loaddesc->resources as $loaddata): 
+                            $totalSize += getRemoteFilesize($data_result->speed->loaddesc->resources->{$load_id}->name, false);
+                            ?>
+                                <tr>
+                                    <td><span class="responsecodehttp resp<?php echo get_http_code($data_result->speed->loaddesc->resources->{$load_id}->name); ?>"><?php echo get_http_code($data_result->speed->loaddesc->resources->{$load_id}->name); ?></span></td>
+                                    <td>GET</td>
+                                    <td>
+                                        <?php echo ($data_result->speed->loaddesc->resources->{$load_id}->name); ?>
+                                    </td>
+                                    <td>
+                                        <?php echo get_domain($data_result->speed->loaddesc->resources->{$load_id}->name); ?>
+                                    </td>
+                                    <td>document</td>
+                                    <td>
+                                        <?php echo pathinfo(parse_url($data_result->speed->loaddesc->resources->{$load_id}->name, PHP_URL_PATH), PATHINFO_EXTENSION); ?>
+                                    </td>
+                                    <td>
+                                        <?php echo $data_result->speed->loaddesc->resources->{$load_id}->redirectTime; ?>
+                                    </td>
+                                    <td>
+                                        <?php echo $data_result->speed->loaddesc->resources->{$load_id}->dnsLookup; ?>
+                                    </td>
+                                    <td>
+                                        <?php echo $data_result->speed->loaddesc->resources->{$load_id}->fetchUntilResponseEnd; ?>
+                                    </td>
+                                    <td>
+                                        <?php echo getRemoteFilesize($data_result->speed->loaddesc->resources->{$load_id}->name); ?>
+                                    </td>
+                                    <td>
+                                        <?php echo calculate_grade(
+                                                    getRemoteFilesize($data_result->speed->loaddesc->resources->{$load_id}->name, false), 
+                                                    pathinfo(parse_url($data_result->speed->loaddesc->resources->{$load_id}->name, PHP_URL_PATH), PATHINFO_EXTENSION), 
+                                                    $data_result->speed->loaddesc->resources->{$load_id}->redirectTime, 
+                                                    get_http_code($data_result->speed->loaddesc->resources->{$load_id}->name)
+                                                );  ?>
+                                    </td>
+                                </tr>
+                                <?php  
+                            $load_id++; 
+                            endforeach; 
+                        } else echo "<td colspan=11><center>No resources were detected.</center></td>";
                         ?>
                     </tbody>
                 </table>
