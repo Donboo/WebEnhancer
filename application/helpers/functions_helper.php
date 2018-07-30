@@ -380,7 +380,7 @@ function format_size($number) {
         case $number < 1099511627776:
             $size = round($number / 1073741824, 2) . ' GiB'; break;
         default:
-            die($number);
+            $size = $number;
     }
     return $size;
 }

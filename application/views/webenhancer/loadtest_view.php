@@ -34,7 +34,7 @@
     }
     /* */
     </style>
-    <div class='loader2'><span>{</span><span>}</span><br><span class='normaltext'>Analyzing speed...</span></div>
+    <div class='loader2'><span>{</span><span>}</span><br><span class='normaltext'>Analyzing...</span><span class='normaltext'>This could take a while</span></div>
     <div class="loadcontent" id="loadcontente"><?php echo $content; ?></div>
     <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
     

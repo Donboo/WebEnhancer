@@ -103,9 +103,10 @@ class WebEnhancer extends CI_Controller
             $this->generalData["speed"]["loaddesc"] = '{"resources":{';
 
             $total_size                             = 0;
-            
             foreach($resources->resources as $load_data): 
-                $total_size                         += get_remote_file_size($load_data->name, false);
+                if(is_numeric(get_remote_file_size($load_data->name, false))) {
+                    $total_size                    += get_remote_file_size($load_data->name, false);
+                }
             endforeach;
         
             foreach($resources->resources as $load_data):
