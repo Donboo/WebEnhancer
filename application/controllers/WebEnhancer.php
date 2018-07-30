@@ -19,7 +19,7 @@ class WebEnhancer extends CI_Controller
     
     public function __construct() {
         parent::__construct();
-        ini_set('max_execution_time', 300);
+        ini_set('max_execution_time', 400);
         
         $this->generalScore = array(
             "security"=>array(
@@ -56,12 +56,7 @@ class WebEnhancer extends CI_Controller
         $this->generalData = array(
             "security"=>array(
                 "xssdesc"=>"none",
-                "sqlidesc"=>array(
-                    "query"=>"none",
-                    "method"=>"none",
-                    "url"=>"none",
-                    "error"=>"none"
-                ),
+                "sqlidesc"=>"none",
                 "misdesc"=>array(
                     "autocompletedesc"=>"none",
                     "headersdesc"=>"none",
@@ -98,60 +93,61 @@ class WebEnhancer extends CI_Controller
         redirect(base_url());
     }
     
-    /**
-    *
-    * function start_test()
-    *
-    * Get given url
-    * Run tests: 
-    *               1. Check if url is real
-    *               2. Check website's speed
-    *               3. Check website's code
-    *               4. Check website's SEO
-    *               5. Check website's audit
-    * Create snapshot
-    * Insert in database
-    *
-    */
-    public function start_test() {
+    function stop_test() {
         
-        // SHOW SOMETHING...
+        if($this->generalData['speed']['loaddesc'] != "none") {
+            
+            $counter                                 = 0;
+            $resources                               = json_decode($this->generalData['speed']['loaddesc']);
+ 
+            $this->generalData["speed"]["loaddesc"] = '{"resources":{';
+
+            $total_size                             = 0;
+            
+            foreach($resources->resources as $load_data): 
+                $total_size                         += get_remote_file_size($load_data->name, false);
+            endforeach;
         
-        // GETTING THE URL
-        $given_url = $this->input->post('testinput');
-        
-        // CHECKING IF URL
-        $given_url = self::test_url($given_url);
-        
-        // TESTUL 1 - SPEED TEST
-        self::test_speed($given_url);
-        
-        // TESTUL 2 - CODE VALIDATOR
-        self::test_code($given_url);
-        
-        // TESTUL 3 - SEO HELPER
-        self::test_seo($given_url);
-        
-        // TESTUL 4 - AUDIT SECURITATE
-        self::test_audit($given_url);
-        
-        $snapshot   = clear_snapshot(file_get_contents($given_url), $given_url);
+            foreach($resources->resources as $load_data):
+                $file_name                           = $load_data->name;
+                $http_code                           = get_http_code($load_data->name);
+                $domain                              = get_domain($load_data->name);
+                $path_info                           = pathinfo(parse_url($load_data->name, PHP_URL_PATH), PATHINFO_EXTENSION);
+                $redirect_time                       = $load_data->redirectTime;
+                $dns_lookup                          = $load_data->redirectTime;
+                $fetch                               = $load_data->fetchUntilResponseEnd;
+                $file_size                           = get_remote_file_size($load_data->name);
+                $our_grade                           = calculate_grade(
+                                                        $file_size, 
+                                                        $path_info, 
+                                                        $redirect_time, 
+                                                        $http_code
+                );
+                
+                $this->generalData['speed']['loaddesc'] .= '"'.$counter.'":{"file_name":"'.$file_name.'","http_code":"'.$http_code.'","domain":"'.$domain.'","path_info":"'.$path_info.'","redirect_time":"'.$redirect_time.'","dns_lookup":"'.$dns_lookup.'","fetch":"'.$fetch.'","file_size":"'.$file_size.'","our_grade":"'.$our_grade.'"},';
+                $counter++;
+            endforeach; 
+            
+            $this->generalData["speed"]["loaddesc"]  = rtrim($this->generalData["speed"]["loaddesc"], ',');
+            
+            $this->generalData['speed']['loaddesc'] .= "}";
+            
+            $total_resources                    = $resources->totalResources;
+            $load_time                          = $resources->domTime;
+            
+            $this->generalData['speed']['loaddesc'] .= ',"total_size":"'.$total_size.'","total_resources":"'.$total_resources.'","load_time":"'.$load_time.'"}';     
+        }
         
         $data = json_encode(array(
             "security"=>array(
-                "xssdesc"=>"none",
-                "sqlidesc"=>array(
-                    "query"=>$this->generalData['security']['sqlidesc']['query'],
-                    "method"=>$this->generalData['security']['sqlidesc']['method'],
-                    "url"=>$this->generalData['security']['sqlidesc']['url'],
-                    "error"=>$this->generalData['security']['sqlidesc']['error']
-                ),
+                "xssdesc"=>$this->generalData['security']['xssdesc'],
+                "sqlidesc"=>$this->generalData['security']['sqlidesc'],
                 "misdesc"=>array(
                     "autocompletedesc"=>$this->generalData['security']['mis']['autocompletedesc'],
                     "headersdesc"=>$this->generalData['security']['mis']['headersdesc'],
                     "powereddesc"=>$this->generalData['security']['mis']['powereddesc']
                 ),
-                "ssldesc"=>"none"
+                "ssldesc"=>$this->generalData['security']['ssldesc']
             ),
             "code"=>array(
                 "validdesc"=>$this->generalData['code']['validdesc'],
@@ -207,9 +203,72 @@ class WebEnhancer extends CI_Controller
         ));
         $json_score  = json_encode($score,JSON_UNESCAPED_SLASHES);
         
-        $this->WebEnhancer_model->insert_result($given_url, $this->input->ip_address(), "0", $snapshot, str_replace('"{', '{', str_replace('}"', '}',str_replace('\\/\\/', '//', str_replace('\"', '"', str_replace('\\\"', '"', $json_data))))), str_replace('"{', '{', str_replace('}"', '}',str_replace('\\/\\/', '//', str_replace('\"', '"', str_replace('\\\"', '"', $json_score))))));
-        flash_redirect('success', '', base_url("WebEnhancer/results/" . $this->db->insert_id()));
         
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, "https://www.googleapis.com/pagespeedonline/v2/runPagespeed?url=".$this->session->userdata("lastTested")."&screenshot=true");
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: text/html; charset=utf-8'));
+        curl_setopt($ch, CURLOPT_USERAGENT,'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.8.1.13) Gecko/20080311 Firefox/2.0.0.13');
+        $google_data = curl_exec($ch);
+        curl_close($ch);
+
+        $google_data                                = json_decode($google_data, true);
+        $screenshot                                 = $google_data['screenshot']['data'];
+        
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, "https://www.googleapis.com/pagespeedonline/v2/runPagespeed?url=".$this->session->userdata("lastTested")."&screenshot=true&strategy=mobile");
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: text/html; charset=utf-8'));
+        curl_setopt($ch, CURLOPT_USERAGENT,'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.8.1.13) Gecko/20080311 Firefox/2.0.0.13');
+        $google_mobile = curl_exec($ch);
+        curl_close($ch);
+        
+        $google_mobile                              = json_decode($google_mobile, true);
+        $screenshot2                                = $google_mobile['screenshot']['data'];
+        
+        $this->WebEnhancer_model->insert_result(
+            $this->session->userdata('lastTested'), 
+            $this->input->ip_address(), 
+            "0", 
+            $screenshot, 
+            $screenshot2,
+            str_replace('"{', '{', str_replace('}"', '}',str_replace('\\/\\/', '//', str_replace('\"', '"', str_replace('\\\"', '"', $json_data))))),
+            str_replace('"{', '{', str_replace('}"', '}',str_replace('\\/\\/', '//', str_replace('\"', '"', str_replace('\\\"', '"', $json_score)))))
+        );
+        flash_redirect('success', '', base_url("WebEnhancer/results/" . $this->db->insert_id()));
+    }
+    
+    /**
+    *
+    * function start_test()
+    *
+    * Get given url
+    * Run tests: 
+    *               1. Check if url is real
+    *               2. Check website's speed
+    *               3. Check website's code
+    *               4. Check website's SEO
+    *               5. Check website's audit
+    * Create snapshot
+    * Insert in database
+    *
+    */
+    public function start_test() {
+        
+        // SHOW SOMETHING...
+        
+        // GETTING THE URL
+        $given_url = $this->input->post('testinput');
+        
+        // CHECKING IF URL
+        $given_url = self::test_url($given_url);
+        
+        // TESTUL 1 - SPEED TEST
+        self::test_speed($given_url);
     }
 
     /**
@@ -228,17 +287,9 @@ class WebEnhancer extends CI_Controller
         $result_id = $this->uri->segment(3);
         
         $data["url"]                                = get_cached_info("URL", "results", "ID", $result_id);
-        
-        $google_data                                = file_get_contents("https://www.googleapis.com/pagespeedonline/v2/runPagespeed?url=".$data["url"]."&screenshot=true");
-        $google_data                                = json_decode($google_data, true);
-        $screenshot                                 = $google_data['screenshot']['data'];
-        
-        $google_mobile                              = file_get_contents("https://www.googleapis.com/pagespeedonline/v2/runPagespeed?url=".$data["url"]."&screenshot=true&strategy=mobile");
-        $google_mobile                              = json_decode($google_mobile, true);
-        $screenshot2                                = $google_mobile['screenshot']['data'];
     
-        $data["snapshot"]                           = str_replace(array('_','-'),array('/','+'),$screenshot);
-        $data["snapshot_mobile"]                    = str_replace(array('_','-'),array('/','+'),$screenshot2);
+        $data["snapshot"]                           = str_replace(array('_','-'),array('/','+'),get_cached_info("Snapshot", "results", "ID", $result_id));
+        $data["snapshot_mobile"]                    = str_replace(array('_','-'),array('/','+'),get_cached_info("SnapshotMobile", "results", "ID", $result_id));
 
         $data["sitename"]                           = parse_url($data["url"])['host'];
         $data["data_result"]                        = json_decode(str_replace('"{', '{', str_replace('}"', '}',str_replace('\\/\\/', '//', str_replace('\"', '"', str_replace('\\\"', '"', get_cached_info("Data", "results", "ID", $result_id)))))));
@@ -262,10 +313,10 @@ class WebEnhancer extends CI_Controller
         $data['text_keywordsleng']                  = $this->lang->line('main_keywordsleng');
         $data['text_guidelines']                    = $this->lang->line('main_guidelines');
             
-        $data['totalSEO']                           = $data["score_result"]->seo->meta->keywords + $data["score_result"]->seo->meta->title + $data["score_result"]->seo->meta->description + $data["score_result"]->seo->responsive;    
-        $data['totalSpeed']                         = 15;    
-        $data['totalCode']                          = $data["score_result"]->code->valid + $data["score_result"]->code->doctype + $data["score_result"]->code->encoding + $data["score_result"]->code->dom; 
-        $data['totalSecurity']                      = $data["score_result"]->security->xss + $data["score_result"]->security->sqli + $data["score_result"]->security->mis->headers + $data["score_result"]->security->mis->powered + $data["score_result"]->security->mis->autocomplete + $data["score_result"]->security->ssl; 
+        $data['totalSEO']                           = round($data["score_result"]->seo->meta->keywords + $data["score_result"]->seo->meta->title + $data["score_result"]->seo->meta->description + $data["score_result"]->seo->responsive);    
+        $data['totalSpeed']                         = round($data["score_result"]->speed->minified + $data["score_result"]->speed->load);    
+        $data['totalCode']                          = round($data["score_result"]->code->valid + $data["score_result"]->code->doctype + $data["score_result"]->code->encoding + $data["score_result"]->code->dom); 
+        $data['totalSecurity']                      = round($data["score_result"]->security->xss + $data["score_result"]->security->sqli + $data["score_result"]->security->mis->headers + $data["score_result"]->security->mis->powered + $data["score_result"]->security->mis->autocomplete + $data["score_result"]->security->ssl); 
         
         $data["main_content"] = 'webenhancer/webenhancer_view';
         $this->load->view('includes/template.php', $data);
@@ -309,6 +360,8 @@ class WebEnhancer extends CI_Controller
             }
         }
         
+        $this->session->set_userdata("lastTested", $given_url);
+        
         return $given_url;
     }
     
@@ -319,55 +372,12 @@ class WebEnhancer extends CI_Controller
         $sourceUrl                              = parse_url($given_url);
         $sourceUrl                              = $sourceUrl['host'];
         
-        echo "<script type='text/javascript'>window.open('".base_url("webenhancer/loadtest/".$sourceUrl)."')</script>";
-        
-        /*
-        *
-        * Continue Load test (because of new tab)
-        *
-        */
-        //die("loaddd message" . GlobalVars::loadMessage());
-        $this->generalData['speed']['loaddesc'] = ($this->session->userdata('loadtest') != null) ? $this->session->userdata('loadtest') : "none" ;
-        
-        $loadtest_result                        = $this->generalData['speed']['loaddesc'];
-        $this->generalScore['speed']['load']    = ($loadtest_result->loadTime < 3) ? 1 : 0;
-        
-        $dom = new DOMDocument;
-        
-        libxml_use_internal_errors(true);
-        $dom->loadHTML(file_get_contents($given_url));
-        libxml_clear_errors(true);
-        
-        $links      = array();
-        $scripts    = array();
-        $errors     = array();
-        
-        foreach ($dom->getElementsByTagName('link') as $node)
-        {
-            array_push($links, $node->getAttribute("href"));
-        }
-        foreach ($dom->getElementsByTagName('script') as $node)
-        {
-            if(strlen($node->getAttribute("src"))) array_push($scripts, "[src]" . $node->getAttribute("src"));
-            else array_push($scripts, "[content]" . $node->nodeValue);
-            
-            foreach (libxml_get_errors() as $error)
-            {
-                array_push($errors, $error);
-            }
-        }
-
-        // DELETE SCRIPTS
-        for ($member_count = $dom->getElementsByTagName("script")->length; --$member_count >= 0; ) {
-            $node = $dom->getElementsByTagName("script")->item($member_count);
-            $node->parentNode->removeChild($node);
-        }
-        $content = $dom->saveHtml();
+        die("<script type='text/javascript' language='Javascript'>window.open('".base_url("webenhancer/loadtest/".$sourceUrl)."')</script>");
   
     }
     
     function test_if_minified($url_content) {
-        return preg_match('/^[^\n\r]+(\r\n?|\n)?$/', $url_content, $match) ? $this->generalScore['code']['minified'] = 1 : $this->generalScore['code']['minified'] = 0;
+        return preg_match('/^[^\n\r]+(\r\n?|\n)?$/', $url_content, $match) ? $this->generalScore['code']['minified'] = 50 : $this->generalScore['code']['minified'] = 0;
     }
     
     function test_code($given_url) {
@@ -379,19 +389,29 @@ class WebEnhancer extends CI_Controller
         libxml_use_internal_errors(true);
         $dom->loadHTML($url_content);
         libxml_clear_errors(true);
+        $xpath = new DOMXPath($dom);
         
         $this->generalData['code']['doctype']   = $dom->doctype->publicId;
         if(get_html_version($dom->doctype->publicId) == "HTML5") $this->generalScore['code']['doctype']  = 25;
         else $this->generalScore['code']['doctype']  = 0;
         
-        //$get_encoding                           = preg_match('~charset=([-a-z0-9_]+)~i',$url_content,$matches);
-        $encoding                               = "UTF-8";//$matches[1][0];
-        $this->generalData['code']['encoding']  = $encoding;
-        $this->generalScore['code']['encoding'] = 25;
+        
+        $old_html                               = $xpath->evaluate("/html/head/meta[@http-equiv='Content-Type']/@content");
+        $html5                                  = $xpath->evaluate("/html/head/meta/@charset");
+        
+        if(isset($html5)) {
+            $this->generalData['code']['encoding']  = $html5;
+            $this->generalScore['code']['encoding'] = 25;
+        } elseif(isset($old_html)) {
+            $this->generalData['code']['encoding']  = $old_html;
+            $this->generalScore['code']['encoding'] = 25;
+        } else {
+            $this->generalData['code']['encoding']  = "None";
+            $this->generalScore['code']['encoding'] = 0;
+        }
             
         $ch = curl_init();
 
-        // set the url, number of POST vars, POST data
         curl_setopt($ch, CURLOPT_URL, "https://validator.w3.org/nu/?out=json");
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_POST, 1);
@@ -427,17 +447,6 @@ class WebEnhancer extends CI_Controller
         $sourceUrl          = parse_url($given_url);
         $sourceUrl          = $sourceUrl['host'];
         
-        echo "<script type='text/javascript'>window.open('".base_url("webenhancer/domelements/".$sourceUrl)."')</script>";
-        
-        /*
-        *
-        * Continue DOM elements test (because of new tab)
-        *
-        */
-        $this->generalData['code']['domdesc']               = ($this->session->userdata('domelements') != null) ? $this->session->userdata('domelements') : "none" ;
-        
-        if($this->generalData['code']['domdesc'] < 1000)    $this->generalScore['code']['dom']      = 25;
-        else                                                $this->generalScore['code']['dom']      = 0;
     }
     
     // TEST SECURITY AUDIT
@@ -470,13 +479,15 @@ class WebEnhancer extends CI_Controller
             $this->generalScore['security']['ssl'] = 0;
         }
     }
-    
+
     // TEST SECURITY AUDIT: SQLI
     function test_audit_sql($given_url) {
         
+        $_SESSION["barabao"] = "";
+        $this->generalData['security']['sqlidesc']              = "{";
+        
         require_once(APPPATH.'libraries\Analyzerforms.php'); 
         require_once(APPPATH.'libraries\Analyzerinputs.php'); 
-        require_once(APPPATH.'libraries\Analyzertextareas.php'); 
         require_once(APPPATH.'libraries\AuxClass.php'); 
         
         // VERSIUNEA 1 - INPUTURI
@@ -487,12 +498,14 @@ class WebEnhancer extends CI_Controller
         $dom->loadHTML($url_content);
         libxml_clear_errors(true);
         
-        $forms_array        = array();
-        $input_array        = array();
-        $textarea_array     = array();
-        $forms_count        = 0;
-        $sqli_syntaxes      = $this->config->item('sqli_syntaxes');
-        $sqli_errors        = $this->config->item('sqli_errors');
+        $forms_array                                            = array();
+        $input_array                                            = array();
+        $textarea_array                                         = array();
+        $forms_count                                            = 0;
+        $sqli_syntaxes                                          = $this->config->item('sqli_syntaxes');
+        $sqli_errors                                            = $this->config->item('sqli_errors');
+        
+        $this->generalScore["security"]["sqli"]                 = 14.28;
         
         foreach ($dom->getElementsByTagName('form') as $form)
         {
@@ -530,7 +543,7 @@ class WebEnhancer extends CI_Controller
                 ($textarea->getAttribute('name') !== null)     ? $textarea_name    = htmlspecialchars($textarea->getAttribute('name'))    : $textarea_name  = '';
                 ($textarea->nodeValue !== null)                ? $textarea_value   = htmlspecialchars($textarea->nodeValue)               : $textarea_value = '';
                 
-                $textarea_added = new Analyzertextareas($input_id, $input_name, $form_id, $form_name, $input_value, "textarea", $forms_count);
+                $textarea_added = new Analyzerinputs($textarea_id, $textarea_name, $form_id, $form_name, $textarea_value, "textarea", $forms_count);
                 array_push($textarea_array, $textarea_added);
             }
 
@@ -576,7 +589,7 @@ class WebEnhancer extends CI_Controller
             
             for ($k = 0; $k < sizeof($form_current_inputs); $k++)
             {
-                for ($plIndex = 0; $plIndex < sizeof($sqli_syntaxes); $plIndex++)
+                for ($sqli_counter = 0; $sqli_counter < sizeof($sqli_syntaxes); $sqli_counter++)
                 {
                     $form_current_input        = $form_current_inputs[$k];
                     $form_current_input_name   = $form_current_input->getName();
@@ -596,7 +609,7 @@ class WebEnhancer extends CI_Controller
                             }
                         }
 
-                        $postObject = new AuxClass($form_current_input_name, $sqli_syntaxes[$plIndex]);
+                        $postObject = new AuxClass($form_current_input_name, $sqli_syntaxes[$sqli_counter]);
 
                         array_push($arrayOfValues, $postObject);
                         for ($m = 0; $m < sizeof($otherInputs); $m++)
@@ -605,7 +618,11 @@ class WebEnhancer extends CI_Controller
                             $currentOtherType = $currentOther->getType();
                             $currentOtherName = $currentOther->getName();
                             $currentOtherValue = $currentOther->getValue();
-                            if ($currentOtherType == 'text' || $currentOtherType == 'password')
+                            if ($currentOtherType == 'textarea') {
+                                $postObject = new AuxClass($currentOtherName, $sqli_syntaxes[$sqli_counter]);
+                                array_push($arrayOfValues, $postObject);
+                            }
+                            else if ($currentOtherType == 'text' || $currentOtherType == 'password')
                             {
                                 $postObject = new AuxClass($currentOtherName, 'oPtImaL123??Leng');
                                 array_push($arrayOfValues, $postObject);
@@ -636,6 +653,7 @@ class WebEnhancer extends CI_Controller
                         }
                         if ($form_current_method == 'post')
                         {
+                    
                             if ($given_url[strlen($given_url) - 1] == '/') $actionUrl = $given_url . $form_current_action;
                             else $actionUrl = $given_url . '/' . $form_current_action;
                             
@@ -651,7 +669,7 @@ class WebEnhancer extends CI_Controller
                             }
 
                             $ch = curl_init();
-
+                            
                             // set the url, number of POST vars, POST data
                             curl_setopt($ch, CURLOPT_URL, $actionUrl);
                             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -678,6 +696,7 @@ class WebEnhancer extends CI_Controller
 
                             if ($vulnerabilityFound)
                             {
+                                
                                 $totalTestStr = ''; 
                                 for ($p = 0; $p < sizeof($arrayOfValues); $p++)
                                 {
@@ -691,27 +710,19 @@ class WebEnhancer extends CI_Controller
                                 }
 
                                 $form_current_method = strtolower($form_current_method);
-                                
-                                $this->generalData["security"]["sqlidesc"]['query']     = htmlspecialchars($totalTestStr);
-                                $this->generalData["security"]["sqlidesc"]['url']       = htmlspecialchars($actionUrl);
-                                $this->generalData["security"]["sqlidesc"]['method']    = $form_current_method;
-                                $this->generalData["security"]["sqlidesc"]['error']     = $regularExpression;
-                                
-                                echo 'SQL Injection Present!<br />Query: ' . HtmlSpecialChars($totalTestStr) . '<br />';
-                                echo 'Method: ' . $form_current_method . '<br />';
-                                echo 'Url: ' . HtmlSpecialChars($actionUrl) . '<br />';
-                                echo 'Error: ' . $regularExpression . '';
 
+                                $this->generalScore["security"]["sqli"]                                = 0;
+
+                                $this->generalData['security']['sqlidesc']                            .= '"'.$k.'":{"query":"'.htmlspecialchars(htmlentities($totalTestStr)).'","url":"'.htmlspecialchars(htmlentities($actionUrl)).'","method":"'.$form_current_method.'","error":"'.$regularExpression.'"},';
                                 break;
+                            } else {
+                                $this->generalScore["security"]["sqli"]                                 = 14.28;
                             }
                         }
                     }
                 }
             }
         }
-
-        
-
         
         /*$form = substr($url_content, strpos($url_content, "<form"));    
         $cont = get_string_between($form, "<form", "</form>");
@@ -794,22 +805,66 @@ class WebEnhancer extends CI_Controller
         // de dat post si retrieve la raspuns si header
         
         // VERSIUNEA 2 - PARAMETRI
+        
+        
+        
+        $this->generalData['security']['sqlidesc']  = rtrim($this->generalData['security']['sqlidesc'], ',');
+        $this->generalData['security']['sqlidesc'] .= "}";
     }
     
      // TEST SECURITY AUDIT: XSS
     function test_audit_xss($given_url) {
         
-        // VERSIUNEA 1 - INPUTURI
-        $url_content = file_get_contents($given_url);
-        $form = substr($url_content, strpos($url_content, "<form"));    
-       // echo "<pre><form" . get_string_between($form, "<form", "</form>");
         
-        //todo
-        // search in string dupa inputuri-required
-        // de modificat valoarea selected si afisata
-        // de dat post si retrieve la raspuns si header
+        // VERSIUNEA 1 - PARAMETRI - SELF XSS
+        @$parsed_url  = parse_url($given_url); // suppress bcoz i got no time left!!!!
         
-        // VERSIUNEA 2 - PARAMETRI
+        $xss_syntaxes     = array(
+            '"><script%20data-cfasync=false>alert(/webenhancer/)</script>',
+            //'<scrscriptipt>document.write("webenhancerteststring")</scrscriptipt>',
+            '<marquee><script%20data-cfasync=false>alert(/webenhancer/)</script></marquee>',
+            '<script%20data-cfasync=false>alert(String.fromCharCode(88,83,83));))"></script>',
+            '<img src=x onerror="&#0000106&#0000097&#0000118&#0000097&#0000115&#0000099&#0000114&#0000105&#0000112&#0000116&#0000058&#0000097&#0000108&#0000101&#0000114&#0000116&#0000040&#0000039&#0000088&#0000083&#0000083&#0000039&#0000041">',
+            '<IMG SRC=&#x6A&#x61&#x76&#x61&#x73&#x63&#x72&#x69&#x70&#x74&#x3A&#x61&#x6C&#x65&#x72&#x74&#x28&#x27&#x58&#x53&#x53&#x27&#x29>'
+        );
+        
+        if ($parsed_url)
+        {
+            if (isset($parsed_url['query']))
+            {
+                $scheme                                                                             = $parsed_url['scheme'];
+                $host                                                                               = $parsed_url['host'];
+                $path                                                                               = $parsed_url['path'];
+                $query                                                                              = $parsed_url['query'];
+                parse_str($query, $parameters);
+                $original_query                                                                     = $query;
+                $syntax_counter                                                                     = 0;
+                $this->generalData['security']['xssdesc']                                           = '{';
+                foreach($xss_syntaxes as $current_xss)
+                {
+                    
+                    foreach($parameters as $para)
+                    {
+                        $query          = $original_query;
+                        $new_query      = str_replace($para, $current_xss, $query);
+                        $query          = $new_query;
+                        $testUrl        = $scheme . '://' . $host . $path . '?' . $query;
+                        
+                        $retrieved_data = get_data($testUrl);
+                        
+                        if (stripos($retrieved_data, urldecode($xss_syntaxes[$syntax_counter])))
+                        {   
+                            $this->generalData['security']['xssdesc']                              .= '"'.$syntax_counter.'":{"query":"'.htmlspecialchars(htmlentities($xss_syntaxes[$syntax_counter])).'","url":"'.htmlspecialchars(htmlentities($testUrl)).'","method":"GET"},';
+                        }
+                    }
+
+                    $syntax_counter++;
+                }
+                
+                $this->generalData['security']['xssdesc']                                          = rtrim($this->generalData['security']['xssdesc'], ',');
+                $this->generalData['security']['xssdesc']                                          .= '}';
+            }
+        }
     }
     
     /*
@@ -874,7 +929,7 @@ class WebEnhancer extends CI_Controller
                         if(strlen($node->getAttribute('password')))
                         {
                             $auto_complete = $node->getAttribute('autocomplete');
-                            if(strcasecmp($auto_complete, 'off') != 0) {
+                            if(!strcasecmp($auto_complete, 'off')) {
                                 array_push($inputs_vulnerable, $node->getAttribute('name') . "[onpage]" . $another_link);
                                 $this->generalScore['security']['mis']['autocomplete'] = 0;
                             } else {
@@ -972,68 +1027,47 @@ class WebEnhancer extends CI_Controller
         libxml_use_internal_errors(true);
         $dom->loadHTML(file_get_contents($given_url));
         libxml_clear_errors(true);
+        $xpath = new DOMXPath($dom);
+    
+        $title          = $xpath->evaluate('string(//head/title)');
+        $description    = $xpath->evaluate('string(//meta[@name="description"]/@content)');
+        $keywords       = $xpath->evaluate('string(//meta[@name="keywords"]/@content)');
         
         
-        $title = $dom->getElementsByTagName("title");
-        if($title->length > 0) {
-            $title      = $title->item(0)->nodeValue;
-                    
-            // SETTING SCORE FOR META TITLE
+        if(isset($title)) {
             (strlen($title) < 70) ? $this->generalScore['seo']['meta']['title'] = 25 : $this->generalScore['seo']['meta']['title'] = 0;
-            
-            
             $this->generalData['seo']['meta']['titledesc']        = "Your title contains " . strlen($title) . " characters. This title's length should be under 70 characters.";
+        } else {
+            $this->generalScore['seo']['meta']['title'] = 0;
+            $this->generalData['seo']['meta']['titledesc']        = "Your site doesn't have a title.";
         }
 
         $metas          = $dom->getElementsByTagName('meta');
-
-        $description    = "unset";
-        $keywords       = "unset";
         
-        if($metas) {
-            for ($i = 0; $i < $metas->length; $i++)
-            {
-                $meta = $metas->item($i);
-                if($meta->getAttribute('name') == 'description')
-                    $description = $meta->getAttribute('content');
-                if($meta->getAttribute('name') == 'keywords')
-                    $keywords = $meta->getAttribute('content');
-            }
-
-            // SETTING SCORE FOR META DESCRIPTION
+        if(isset($description)) {
             if(strlen($description) >= 50 && strlen($description) <= 300) $this->generalScore['seo']['meta']['description']     = 25;
             else $this->generalScore['seo']['meta']['description']     = 0;
+            
+            $this->generalData['seo']['meta']['descriptiondesc']  = "Your description contains " . strlen($description) . " characters. This description's length should be everywhere between 50 and 300 characters.";
+        } else {
+            $this->generalScore['seo']['meta']['description']     = 0;
+            $this->generalData['seo']['meta']['descriptiondesc']  = "Your site doesn't have a description.";
+            $description = "";
+        }
         
-            // SETTING SCORE FOR KEYWORDS
+        if(isset($keywords)) {
             $keyword = explode(',', $keywords);
             $countKeywords = 0;
             foreach($keyword as $i =>$key) {
                 $countKeywords++;
             }
             ($countKeywords <= 10) ? $this->generalScore['seo']['meta']['keywords'] = 25 : $this->generalScore['seo']['meta']['keywords'] = 25;
-            
-                    // SETTING DESCRIPTIONS
-            $this->generalData['seo']['meta']['descriptiondesc']  = "Your description contains " . strlen($description) . " characters. This description's length should be everywhere between 50 and 300 characters.";
             $this->generalData['seo']['meta']['keywordsdesc']     = "You have " . strlen($countKeywords) . " keywords. Maximum number of keywords allowed is 10.";
         } else {
-            // SETTING SCORE
-            $this->generalScore['seo']['meta']['description']     = 0;
+            $keywords = "";
             $this->generalScore['seo']['meta']['keywords']        = 0;
-            // SETTING DESCRIPTIONS
-            $this->generalData['seo']['meta']['descriptiondesc']  = "Your site doesn't have a description.";
             $this->generalData['seo']['meta']['keywordsdesc']     = "Your site doesn't have any keywords.";   
         }
-        
-        /* CHECK OPEN GRAPH todo
-        $xpath = new DOMXPath($dom);
-        $query = '//*(sterge paranteza)/meta[starts-with(@property, \'og:\')]';
-        $metas = $xpath->query($query);
-        $rmetas = array();
-        foreach ($metas as $meta) {
-            $property = $meta->getAttribute('property');
-            $content = $meta->getAttribute('content');
-            $rmetas[$property] = $content;
-        }*/
     }
     
     function test_seo_responsive($given_url) {
@@ -1067,9 +1101,78 @@ class WebEnhancer extends CI_Controller
         }
     }
     
+    function continue_test() {
+        $source_url = $this->uri->segment(3);
+
+        $given_url = $this->session->userdata('lastTested');
+        
+        
+        $this->generalData['speed']['loaddesc'] = ($this->session->userdata('loadtest') != null) ? $this->session->userdata('loadtest') : "none" ;
+        
+        $loadtest_result                        = $this->generalData['speed']['loaddesc'];
+        $decoded_json                           = json_decode($loadtest_result);
+
+        $this->generalScore['speed']['load']    = ($decoded_json->domTime < 3) ? 50 : 0;
+        
+        
+        /*
+        *
+        * Continue DOM elements test (because of new tab)
+        *
+        */
+        $this->generalData['code']['domdesc']               = ($this->session->userdata('domelements') != null) ? $this->session->userdata('domelements') : "none" ;
+        
+        if($this->generalData['code']['domdesc'] < 1000)    $this->generalScore['code']['dom']      = 25;
+        else                                                $this->generalScore['code']['dom']      = 0;
+
+        $dom = new DOMDocument;
+        
+        libxml_use_internal_errors(true);
+        $dom->loadHTML(file_get_contents($given_url));
+        libxml_clear_errors(true);
+        
+        $links      = array();
+        $scripts    = array();
+        $errors     = array();
+        
+        foreach ($dom->getElementsByTagName('link') as $node)
+        {
+            array_push($links, $node->getAttribute("href"));
+        }
+        foreach ($dom->getElementsByTagName('script') as $node)
+        {
+            if(strlen($node->getAttribute("src"))) array_push($scripts, "[src]" . $node->getAttribute("src"));
+            else array_push($scripts, "[content]" . $node->nodeValue);
+            
+            foreach (libxml_get_errors() as $error)
+            {
+                array_push($errors, $error);
+            }
+        }
+
+        // DELETE SCRIPTS
+        for ($member_count = $dom->getElementsByTagName("script")->length; --$member_count >= 0; ) {
+            $node = $dom->getElementsByTagName("script")->item($member_count);
+            $node->parentNode->removeChild($node);
+        }
+        $content = $dom->saveHtml();
+        
+        // TESTUL 2 - CODE VALIDATOR
+        self::test_code($given_url);
+        
+        // TESTUL 3 - SEO HELPER
+        self::test_seo($given_url);
+        
+        // TESTUL 4 - AUDIT SECURITATE
+        self::test_audit($given_url);
+        
+        self::stop_test();
+    }
+    
     function loadtest() {
-        $given_url              = $this->uri->segment(3);
-        $data["content"]        = set_absolute_paths(file_get_contents("https://" . $given_url), $given_url);
+        $data["given_url"]      = $this->uri->segment(3);
+        $data["full_url"]       = $this->session->userdata("lastTested");
+        $data["content"]        = set_absolute_paths(file_get_contents("https://" . $data["given_url"]), $data["given_url"]);
         
         $this->load->view('webenhancer/loadtest_view', $data);
     }
@@ -1084,29 +1187,20 @@ class WebEnhancer extends CI_Controller
     function returnload() {
         if(isset($_POST["cookieset"])) {
             $this->session->set_userdata('loadtest', $_POST["cookieset"]);
-            //die("wee" . GlobalVars::loadMessage($_POST["cookieset"]));
+            $this->session->set_userdata('domelements', $_POST["domelements"]);
             echo "200"; // bcoz return won't.
             return "200"; 
         } else {
+            $this->session->set_userdata('domelements', "0");
             $this->session->set_userdata('loadtest', "501");
             echo "501"; // bcoz return won't.
             return "501"; 
         }
     }
     
-    function returndomelements() {
-        if(isset($_POST["domelements"])) {
-            $this->session->set_userdata('domelements', $_POST["domelements"]);
-            die("200"); // bcoz return won't.
-        } else {
-            $this->session->set_userdata('domelements', "0");
-            die("501"); // bcoz return won't.
-        }
-    }
-    
     function domelements() {
-        $given_url              = $this->uri->segment(3);
-        $data["content"]        = set_absolute_paths(file_get_contents("https://" . $given_url), $given_url);
+        $data["given_url"]      = $this->uri->segment(3);
+        $data["content"]        = set_absolute_paths(file_get_contents("https://" . $data["given_url"]), $data["given_url"]);
         
         $this->load->view('webenhancer/domelements_view', $data);
     }

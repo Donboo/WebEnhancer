@@ -173,19 +173,6 @@ function get_string_between($string, $start, $end){
     return $syntax;
 }*/
 
-function xss_syntaxes() {
-    $syntax = array(
-        '"></title><script>alert(1111)</script>',
-        '<scrscriptipt>alert(1)</scrscriptipt>',
-        '<h1>a</h1>',
-        '<marquee><script>alert(/XSS/)</script></marquee>',
-        'alert(String.fromCharCode(88,83,83));))">',
-        '<img src=x onerror="&#0000106&#0000097&#0000118&#0000097&#0000115&#0000099&#0000114&#0000105&#0000112&#0000116&#0000058&#0000097&#0000108&#0000101&#0000114&#0000116&#0000040&#0000039&#0000088&#0000083&#0000083&#0000039&#0000041">',
-        '<IMG SRC=&#x6A&#x61&#x76&#x61&#x73&#x63&#x72&#x69&#x70&#x74&#x3A&#x61&#x6C&#x65&#x72&#x74&#x28&#x27&#x58&#x53&#x53&#x27&#x29>'
-    );
-    return $syntax;
-}
-
 function get_injection_type($numeric) {
     switch ($numeric) {
         case 1:
@@ -392,6 +379,8 @@ function format_size($number) {
             $size = round($number / 1048576, 2) . ' MiB'; break;
         case $number < 1099511627776:
             $size = round($number / 1073741824, 2) . ' GiB'; break;
+        default:
+            die($number);
     }
     return $size;
 }
@@ -406,14 +395,14 @@ function format_size($number) {
 * @return string
 *
 */
-function getRemoteFilesize($url, $formatSize = true, $useHead = true)
+function get_remote_file_size($url, $formatSize = true, $useHead = true)
 {
     if (false !== $useHead) {
         stream_context_set_default(array('http' => array('method' => 'HEAD')));
     }
-    @$headers = get_headers($url, 1);
+    $headers = @get_headers($url, 1);
     if($headers) {
-        $head = array_change_key_case(get_headers($url, 1));
+        $head = array_change_key_case($headers);
 
         $clen = isset($head['content-length']) ? $head['content-length'] : 0;
 
@@ -421,7 +410,7 @@ function getRemoteFilesize($url, $formatSize = true, $useHead = true)
             return 0;
         }
 
-        if (!$formatSize) {
+        if ($formatSize == false) {
             return $clen; 
         }
 
@@ -438,7 +427,7 @@ function getRemoteFilesize($url, $formatSize = true, $useHead = true)
         }
 
         return $size;
-    } else return "unavailable site.";
+    } else return 0;
 }
 
 /* God bless Stack */
@@ -518,6 +507,33 @@ function calculate_grade($size, $ext, $redirect_time, $http_code)
                     } else return "<abbr title='HTTP Code should be 200 or 301 for all your resources.'>NOT OK (HTTP CODE)</abbr>";
                 } else return "<abbr title='To access this resources, the connection is redirected. Remove this redirect.'>NOT OK (REDIRECT)</abbr>";
             } else return "<abbr title='Your size excedes our recommendations.'>NOT OK (SIZE)</abbr>";
+            break;
+        case 'jpg':
+            if($size < 1024*150) {
+                if($redirect_time == 0) {
+                    if($http_code == "200" || $http_code == "301") {
+                        return "OK";
+                    } else return "<abbr title='HTTP Code should be 200 or 301 for all your resources.'>NOT OK (HTTP CODE)</abbr>";
+                } else return "<abbr title='To access this resources, the connection is redirected. Remove this redirect.'>NOT OK (REDIRECT)</abbr>";
+            } else return "<abbr title='Your size excedes our recommendations. Try compressing.'>NOT OK (SIZE)</abbr>";
+            break;
+        case 'jpeg':
+            if($size < 1024*150) {
+                if($redirect_time == 0) {
+                    if($http_code == "200" || $http_code == "301") {
+                        return "OK";
+                    } else return "<abbr title='HTTP Code should be 200 or 301 for all your resources.'>NOT OK (HTTP CODE)</abbr>";
+                } else return "<abbr title='To access this resources, the connection is redirected. Remove this redirect.'>NOT OK (REDIRECT)</abbr>";
+            } else return "<abbr title='Your size excedes our recommendations. Try compressing.'>NOT OK (SIZE)</abbr>";
+            break;
+        case 'gif':
+            if($size < 1024*150) {
+                if($redirect_time == 0) {
+                    if($http_code == "200" || $http_code == "301") {
+                        return "OK";
+                    } else return "<abbr title='HTTP Code should be 200 or 301 for all your resources.'>NOT OK (HTTP CODE)</abbr>";
+                } else return "<abbr title='To access this resources, the connection is redirected. Remove this redirect.'>NOT OK (REDIRECT)</abbr>";
+            } else return "<abbr title='Your size excedes our recommendations. Try compressing.'>NOT OK (SIZE)</abbr>";
             break;
         default:
             return "?";

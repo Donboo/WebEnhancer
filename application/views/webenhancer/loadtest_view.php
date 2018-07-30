@@ -87,14 +87,16 @@
             json_string += '"sslTime":"'  + (window.performance.timing.secureConnectionStart    - window.performance.timing.secureConnectionStop )     + '"}';
 
             $(".loadcontent").remove();
-            $("#loadcontent").remove();
+            $("#loadcontente").remove();
 
+            var domelements = $("*").length;
+            
             $.ajax({
                 type: "POST",
                 url: "<?= base_url('webenhancer/returnload/'); ?>",
-                data: {"_token": "<?php echo $this->security->get_csrf_hash(); ?>","cookieset":json_string},
+                data: {"_token": "<?php echo $this->security->get_csrf_hash(); ?>","cookieset":json_string,"domelements":domelements},
                 success: function (data) {
-                    window.close();
+                    window.location.assign("<?php echo base_url("webenhancer/continue_test/" . $given_url); ?>");
                 }
             });
         });

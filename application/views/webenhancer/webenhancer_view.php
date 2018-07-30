@@ -108,7 +108,7 @@
                                     <div class="tile is-parent is-vertical">
                                         <article class="tile is-child notification is-link">
                                             <p class="title">
-                                                <?php echo ($data_result->speed->loaddesc != "none") ? $data_result->speed->loaddesc->loadTime : "Could not calculate"; ?>s
+                                                <?php echo ($data_result->speed->loaddesc != "none") ? $data_result->speed->loaddesc->load_time : "Could not calculate"; ?>s
                                             </p>
                                             <p class="subtitle">
                                                 Load Time
@@ -116,7 +116,7 @@
                                         </article>
                                         <article class="tile is-child notification is-success">
                                             <p class="title">
-                                                <?php echo ($data_result->speed->loaddesc != "none") ? $data_result->speed->loaddesc->totalResources : "Could not calculate"; ?>
+                                                <?php echo ($data_result->speed->loaddesc != "none") ? $data_result->speed->loaddesc->total_resources : "Could not calculate"; ?>
                                             </p>
                                             <p class="subtitle">
                                                 Total Resources
@@ -145,7 +145,7 @@
                                         </article>
                                         <article class="tile is-child notification is-warning">
                                             <p class="title">
-                                                <?php echo ($data_result->speed->loaddesc != "none") ? $data_result->speed->loaddesc->domTime : "Could not calculate"; ?>
+                                                <?php echo ($data_result->speed->loaddesc != "none") ? $data_result->speed->loaddesc->load_time : "Could not calculate"; ?>
                                             </p>
                                             <p class="subtitle">
                                                 DOM Time
@@ -158,7 +158,7 @@
                     </div>
                 </div>
 
-                <table class="table is-striped is-network">
+                <table class="table is-fullwidth is-striped is-network">
                     <thead>
                         <tr>
                             <th>Status</th>
@@ -176,97 +176,44 @@
                     </thead>
                     <tbody>
                         <?php 
-                        $load_id    = 0;
-                        $totalSize  = 0;
                         if($data_result->speed->loaddesc != "none") {
-                            foreach($data_result->speed->loaddesc->resources as $loaddata): 
-                            $totalSize += getRemoteFilesize($data_result->speed->loaddesc->resources->{$load_id}->name, false);
+                            foreach($data_result->speed->loaddesc->resources as $load_data): 
                             ?>
                                 <tr>
-                                    <td><span class="responsecodehttp resp<?php echo get_http_code($data_result->speed->loaddesc->resources->{$load_id}->name); ?>"><?php echo get_http_code($data_result->speed->loaddesc->resources->{$load_id}->name); ?></span></td>
+                                    <td><span class="responsecodehttp resp<?php echo $load_data->http_code; ?>"><?php echo $load_data->http_code; ?></span></td>
                                     <td>GET</td>
                                     <td>
-                                        <?php echo ($data_result->speed->loaddesc->resources->{$load_id}->name); ?>
+                                        <?php echo $load_data->file_name; ?>
                                     </td>
                                     <td>
-                                        <?php echo get_domain($data_result->speed->loaddesc->resources->{$load_id}->name); ?>
+                                        <?php echo $load_data->domain; ?>
                                     </td>
                                     <td>document</td>
                                     <td>
-                                        <?php echo pathinfo(parse_url($data_result->speed->loaddesc->resources->{$load_id}->name, PHP_URL_PATH), PATHINFO_EXTENSION); ?>
+                                        <?php echo $load_data->path_info; ?>
                                     </td>
                                     <td>
-                                        <?php echo $data_result->speed->loaddesc->resources->{$load_id}->redirectTime; ?>
+                                        <?php echo $load_data->redirect_time; ?>
                                     </td>
                                     <td>
-                                        <?php echo $data_result->speed->loaddesc->resources->{$load_id}->dnsLookup; ?>
+                                        <?php echo $load_data->dns_lookup; ?>
                                     </td>
                                     <td>
-                                        <?php echo $data_result->speed->loaddesc->resources->{$load_id}->fetchUntilResponseEnd; ?>
+                                        <?php echo $load_data->fetch; ?>
                                     </td>
                                     <td>
-                                        <?php echo getRemoteFilesize($data_result->speed->loaddesc->resources->{$load_id}->name); ?>
+                                        <?php echo $load_data->file_size; ?>
                                     </td>
                                     <td>
-                                        <?php echo calculate_grade(
-                                                    getRemoteFilesize($data_result->speed->loaddesc->resources->{$load_id}->name, false), 
-                                                    pathinfo(parse_url($data_result->speed->loaddesc->resources->{$load_id}->name, PHP_URL_PATH), PATHINFO_EXTENSION), 
-                                                    $data_result->speed->loaddesc->resources->{$load_id}->redirectTime, 
-                                                    get_http_code($data_result->speed->loaddesc->resources->{$load_id}->name)
-                                                );  ?>
+                                        <?php echo $load_data->our_grade;  ?>
                                     </td>
                                 </tr>
                                 <?php  
-                            $load_id++; 
                             endforeach; 
                         } else echo "<td colspan=11><center>No resources were detected.</center></td>";
                         ?>
                     </tbody>
                 </table>
-
-                <div class="tile is-ancestor">
-                    <div class="tile is-vertical is-12">
-                        <div class="tile">
-                            <div class="tile is-parent is-vertical">
-                                <article class="tile is-child notification is-link">
-                                    <p class="title">
-                                        OK
-                                    </p>
-                                    <p class="subtitle">
-                                        Cache
-                                    </p>
-                                </article>
-                                <article class="tile is-child notification is-link">
-                                    <p class="title">
-                                        OK
-                                    </p>
-                                    <p class="subtitle">
-                                        Page redirects
-                                    </p>
-                                </article>
-                            </div>
-
-                            <div class="tile is-parent is-vertical">
-                                <article class="tile is-child notification is-link">
-                                    <p class="title" id="totalSize">
-                                        OK
-                                    </p>
-                                    <p class="subtitle">
-                                        Compression
-                                    </p>
-                                </article>
-                                <article class="tile is-child notification is-link">
-                                    <p class="title">
-                                        NOT OK
-                                    </p>
-                                    <p class="subtitle">
-                                        Render blocking
-                                    </p>
-                                </article>
-                            </div>
-                        </div>
-                    </div>
-                </div>
 
             </center>
         </div>
@@ -275,10 +222,6 @@
 
 <section class="section">
     <div class="container">
-        <h1 class="title">a</h1>
-        <h2 class="subtitle">
-        A simple container to divide your page into <strong>sections</strong>, like the one you're currently reading
-        </h2>
     </div>
 </section>
 
@@ -335,7 +278,7 @@
                                         </article>
                                         <article class="tile is-child notification is-warning">
                                             <p class="title">
-                                                <?php echo $data_result->code->encoding; ?>
+                                                <?php //echo print_r($data_result->code->encoding); ?>
                                             </p>
                                             <p class="subtitle">
                                                 Encoding
@@ -348,7 +291,7 @@
                     </div>
                 </div>
 
-                <table class="table is-striped is-network">
+                <table class="table is-fullwidth is-striped is-network">
                     <thead>
                         <tr>
                             <th>Type</th>
@@ -358,68 +301,25 @@
                     </thead>
                     <tbody>
                         <?php 
-                        $totalErrors    = 0;
+                        $totalErrors = 0;
                         foreach($data_result->code->validdesc->messages as $loaddata): 
+                        $totalErrors++;
                         ?>
                             <tr>
                                 <td>
-                                    <span class="validatortype type<?php echo $data_result->code->validdesc->messages->{$totalErrors}->type; ?>">
-                                        <?php echo ($data_result->code->validdesc->messages->{$totalErrors}->type); ?>
+                                    <span class="validatortype type<?php echo $loaddata->type; ?>">
+                                        <?php echo ($loaddata->type); ?>
                                     </span>
                                 </td>
-                                <td><?php echo ($data_result->code->validdesc->messages->{$totalErrors}->line); ?></td>
-                                <td><?php echo alive_validate_messages($data_result->code->validdesc->messages->{$totalErrors}->message); ?></td>
+                                <td><?php echo ($loaddata->line); ?></td>
+                                <td><?php echo alive_validate_messages($loaddata->message); ?></td>
                             </tr>
                             <?php  
-                        $totalErrors++; 
                         endforeach; 
                         ?>
                     </tbody>
                 </table>
-
-                <div class="tile is-ancestor">
-                    <div class="tile is-vertical is-12">
-                        <div class="tile">
-                            <div class="tile is-parent is-vertical">
-                                <article class="tile is-child notification is-link">
-                                    <p class="title">
-                                        OK
-                                    </p>
-                                    <p class="subtitle">
-                                        Cache
-                                    </p>
-                                </article>
-                                <article class="tile is-child notification is-link">
-                                    <p class="title">
-                                        OK
-                                    </p>
-                                    <p class="subtitle">
-                                        Page redirects
-                                    </p>
-                                </article>
-                            </div>
-
-                            <div class="tile is-parent is-vertical">
-                                <article class="tile is-child notification is-link">
-                                    <p class="title" >
-                                        OK
-                                    </p>
-                                    <p class="subtitle">
-                                        Compression
-                                    </p>
-                                </article>
-                                <article class="tile is-child notification is-link">
-                                    <p class="title">
-                                        NOT OK
-                                    </p>
-                                    <p class="subtitle">
-                                        Render blocking
-                                    </p>
-                                </article>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                
             </center>
         </div>
     </div>
@@ -439,59 +339,145 @@
 <section class="hero is-info is-fullheight" id="securitytest">
     <div class="hero-body">
         <div class="container">
+            <p class="title">
+                <?php echo $securityaudit; ?>
+            </p>
             <center>
-                <p class="title">
-                    <?php echo $securityaudit; ?>
-                </p>
-                <div class="tile is-ancestor">
-                    <div class="tile is-vertical is-12">
-                        <div class="tile">
-                            <div class="tile is-parent is-vertical">
-                                <article class="tile is-child notification is-link">
-                                    <p class="title">
-
-                                    </p>
-                                    <p class="subtitle">
-
-                                    </p>
-                                </article>
-                                <article class="tile is-child notification is-success">
-                                    <p class="title">
-
-                                    </p>
-                                    <p class="subtitle">
-
-                                    </p>
-                                </article>
-                            </div>
-                            <div class="tile is-parent">
-                                <article class="tile is-child notification is-light">
-                                    <div class="progressbox" style="margin-top: 60px;">
-                                        <div class="progressring" id="securityprogress">
-                                            <div class="inner title" style="margin-top: 20px;">
-                                                <?php echo $totalSecurity; ?>
-                                            </div>
-                                        </div>
+                <div class="columns">
+                    <div class="column">
+                        <div class="tile is-ancestor">
+                            <div class="tile is-vertical is-12">
+                                <div class="tile">
+                                    <div class="tile is-parent is-vertical">
+                                        <article class="tile is-child notification is-link">
+                                            <p class="title">
+                                                <?php echo ($score_result->security->mis->autocomplete); ?>/14.28
+                                            </p>
+                                            <p class="subtitle">
+                                                <abbr title="Disable autocomplete on inputs by adding autocomplete=off as attribute for input">Autocomplete inputs</abbr>
+                                            </p>
+                                        </article>
+                                        <article class="tile is-child notification is-success">
+                                            <p class="title">
+                                                <?php echo ($score_result->security->mis->powered); ?>/14.28
+                                            </p>
+                                            <p class="subtitle">
+                                                <abbr title="Should be disabled everytime. Google it.">X-Powered-by header</abbr>
+                                            </p>
+                                        </article>
                                     </div>
-                                </article>
+                                    <div class="tile is-parent">
+                                        <article class="tile is-child notification is-light">
+                                            <div class="progressbox" style="margin-top: 60px;">
+                                                <div class="progressring" id="securityprogress">
+                                                    <div class="inner title" style="margin-top: 20px;">
+                                                        <?php echo $totalSecurity; ?>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </article>
+                                    </div>
+                                    <div class="tile is-parent is-vertical">
+                                        <article class="tile is-child notification is-link">
+                                            <p class="title" id="totalSize">
+                                                <?php echo ($score_result->security->mis->headers); ?>/14.28
+                                            </p>
+                                            <p class="subtitle">
+                                                <abbr title="Always hide your headers!">Headers</abbr>
+                                            </p>
+                                        </article>
+                                        <article class="tile is-child notification is-warning">
+                                            <p class="title">
+                                                <?php echo ($score_result->security->ssl); ?>/14.28
+                                            </p>
+                                            <p class="subtitle">
+                                                <?php echo ($data_result->security->ssldesc); ?>
+                                            </p>
+                                        </article>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="tile is-parent is-vertical">
-                                <article class="tile is-child notification is-link">
-                                    <p class="title" id="totalSize">
-
-                                    </p>
-                                    <p class="subtitle">
-
-                                    </p>
-                                </article>
-                                <article class="tile is-child notification is-warning">
-                                    <p class="title">
-
-                                    </p>
-                                    <p class="subtitle">
-
-                                    </p>
-                                </article>
+                        </div>
+                    </div>
+                </div>
+            </center>
+            <br>
+            
+            <table class="table is-fullwidth is-striped is-network">
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>URL</th>
+                        <th>Method</th>
+                        <th>Query</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php 
+                    if($data_result->security->sqlidesc != 'none') {
+                        foreach($data_result->security->sqlidesc as $sqli): 
+                    ?>
+                            <tr>
+                                <td>
+                                    <span class="responsecodehttp resp404">
+                                        SQLi
+                                    </span>
+                                </td>
+                                <td><?php echo ($sqli->url); ?></td>
+                                <td><?php echo ($sqli->method); ?></td>
+                                <td><?php echo html_entity_decode($sqli->query); ?></td>
+                            </tr>
+                    <?php  
+                        endforeach; 
+                    }
+                    ?>
+                    <?php 
+                    if($data_result->security->xssdesc != 'none') {
+                        foreach($data_result->security->xssdesc as $xss): 
+                    ?>
+                            <tr>
+                                <td>
+                                    <span class="responsecodehttp resp404">
+                                        XSS
+                                    </span>
+                                </td>
+                                <td><?php echo ($xss->line); ?></td>
+                                <td><?php echo alive_validate_messages($xss->message); ?></td>
+                            </tr>
+                    <?php  
+                        endforeach; 
+                    }
+                    ?>
+                </tbody>
+            </table>
+            
+            <center>
+                <div class="columns">
+                    <div class="column">
+                        <div class="tile is-ancestor">
+                            <div class="tile is-vertical is-12">
+                                <div class="tile">
+                                    <div class="tile is-parent is-vertical">
+                                        <article class="tile is-child notification is-link">
+                                            <p class="title">
+                                                <?php echo ($score_result->security->xss); ?>/14.28
+                                            </p>
+                                            <p class="subtitle">
+                                                <abbr title="Cross site scripting. Google is your friend.">XSS</abbr>
+                                            </p>
+                                        </article>
+                                    </div>
+                                    <div class="tile is-parent is-vertical">
+                                        <article class="tile is-child notification is-danger">
+                                            <p class="title" id="totalSize">
+                                                <?php echo ($score_result->security->sqli); ?>/14.28
+                                            </p>
+                                            <p class="subtitle">
+                                                <abbr title="SQL Injection. Filter user data. Google?">SQLi</abbr>
+                                            </p>
+                                        </article>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -661,7 +647,7 @@
 
         seoBar.animate(<?php echo $totalSEO/100; ?>);
         seoBar_mini.animate(<?php echo $totalSEO/100; ?>);
-        $("#totalSize").text("<?php echo format_size($totalSize); ?>");
-        $("#totalErrors").text("<?php echo ($totalErrors); ?>");
+        $("#totalSize").text("<?php echo format_size($data_result->speed->loaddesc->total_size); ?>");
+        $("#totalErrors").text("<?php echo $totalErrors ; ?>");
     };
 </script>

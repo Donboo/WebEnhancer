@@ -24,7 +24,7 @@
             <div class="field">
                 <label class="label">EMail address</label>
                 <div class="control has-icons-right">
-                    <input class="input" name="email" value="<?php echo set_value('email'); ?>" type="email">
+                    <input class="input" name="email" value="<?php echo set_value('email'); ?>" type="email" autocomplete="off">
                     <span class="icon is-small is-right">
                         <i class="fa fa-envelope"></i>
                     </span>
@@ -35,7 +35,7 @@
             <div class="field">
                 <label class="label">Password</label>
                 <div class="control has-icons-right">
-                    <input class="input" name="password" value="<?php echo set_value('password'); ?>" type="password">
+                    <input class="input" name="password" value="<?php echo set_value('password'); ?>" type="password" autocomplete="off">
                     <span class="icon is-small is-right">
                         <i class="fa fa-key"></i>
                     </span>
