@@ -42,7 +42,7 @@
         <meta name="twitter:image:src" content="https://www.kwindo.ro/assets/images/opengraphCreateSite.png">
         
         <link rel="stylesheet" href="<?php echo base_url("assets/css/bulma.min.css"); ?>">
-        <link rel="stylesheet" href="<?php echo base_url("assets/css/custom.css"); ?>">
+        <link rel="stylesheet" href="<?php echo base_url("assets/css/custom.min.css"); ?>">
         
          <script type="application/ld+json">
          {

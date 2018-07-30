@@ -1,39 +1,6 @@
 <!DOCTYPE html>
 <html>
-    <style>/* {} LOADER */
-    .loader2 {
-        background-color: #4684ee;
-        color: #fff;
-        font-family: Consolas, Menlo, Monaco, monospace;
-        font-weight: bold;
-        font-size: 30vh;
-        opacity: 1;
-        height: 100%;
-        width: 100%;
-        position: fixed;
-        text-align: center;
-        z-index: 31;
-    }
-    .loader2 span {
-        display: inline-block;
-        animation: pulse 0.4s alternate infinite ease-in-out;
-    }
-    .loader2 .normaltext {
-        font-size: 3vh;
-    }
-
-    span:nth-child(2) {
-      animation-delay: 0.4s;
-    }
-
-    @keyframes pulse {
-      to {
-        transform: scale(0.8);
-        opacity: 0.5;
-      }
-    }
-    /* */
-    </style>
+    <style>.loader2{background-color:#4684ee;color:#fff;font-family:Consolas,Menlo,Monaco,monospace;font-weight:700;font-size:30vh;opacity:1;height:100%;width:100%;position:fixed;text-align:center;z-index:9999}.loader2 span{display:inline-block;animation:pulse .4s alternate infinite ease-in-out}.loader2 .normaltext{font-size:3vh}span:nth-child(2){animation-delay:.4s}@keyframes pulse{to{transform:scale(.8);opacity:.5}}</style>
     <div class='loader2'><span>{</span><span>}</span><br><span class='normaltext'>Analyzing...</span><span class='normaltext'>This could take a while</span></div>
     <div class="loadcontent" id="loadcontente"><?php echo $content; ?></div>
     <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>

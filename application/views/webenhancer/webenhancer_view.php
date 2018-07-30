@@ -190,7 +190,7 @@
                                     </td>
                                     <td>document</td>
                                     <td>
-                                        <?php echo $load_data->path_info; ?>
+                                        <?php echo strlen($load_data->path_info < 5) ? $load_data->path_info : "?"; ?>
                                     </td>
                                     <td>
                                         <?php echo $load_data->redirect_time; ?>
