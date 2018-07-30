@@ -413,10 +413,8 @@ class WebEnhancer extends CI_Controller
             
         $ch = curl_init();
 
-        curl_setopt($ch, CURLOPT_URL, "https://validator.w3.org/nu/?out=json");
+        curl_setopt($ch, CURLOPT_URL, "https://validator.w3.org/nu/?out=json&" . http_build_query(array("doc"=>$given_url)));
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_POST, 1);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query(array("doc"=>$given_url)));
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
         curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
         curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: text/html; charset=utf-8'));
