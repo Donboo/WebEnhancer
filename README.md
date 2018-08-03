@@ -8,7 +8,7 @@ Every website should be fast, compact, easy to find and secure. WebEnhancer offe
 ### How does WebEnhancer work?
 WebEnhancer runs automatically security, code, SEO and speed tests for a website specified by the user and returns the problems found while scanning, along the fixes for those problems.
 
-Technologies:
+### Technologies:
 * php
 * mysql
 * Google PageSpeed API
