@@ -6,7 +6,7 @@
 Every website should be fast, compact, easy to find and secure. WebEnhancer offers the solution to create a performing website with minimum production and maintenance cost, decreasing in the same time the amount of time used to write a sustainable code.
 
 ### How does WebEnhancer work?
-WebEnhancer runs automatically security, code, SEO and speed tests for a website specified by the user and returns the problems found while scanning, along the fixes for those problems.
+WebEnhancer automatically runs security, code, SEO and speed tests for a website specified by the user and returns the problems found while scanning, along the fixes for those problems.
 
 ### Technologies:
 * php
